@@ -99,7 +99,7 @@
                                 <ContextMenu />
                             </Button.ContextMenu>
                             <StackPanel Orientation="Horizontal">
-                                <Grid Width="{Binding Owner.Bar.IconSize}" Height="{Binding Owner.Bar.IconSize}">
+                                <Grid Width="{Binding Owner.Bar.IconSize}" Height="{Binding Owner.Bar.IconSize}" Style="{StaticResource PressScale}">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xE71D;" Opacity="0.7"
                                                Visibility="{Binding Icon, Converter={StaticResource HideIf}}" />
                                     <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality" />
@@ -430,18 +430,8 @@
     <DataTemplate DataType="{x:Type w:SoundWidget}">
         <Grid>
             <Grid.Resources>
-                <DataTemplate x:Key="AudioDeviceRow" DataType="{x:Type w:AudioDeviceItem}">
-                    <Button Style="{StaticResource FlyoutButton}" Padding="10,6"
-                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}" ToolTip="{Binding Name}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" FontSize="12" Width="18" Margin="0,0,6,0"
-                                       Text="&#xE73E;" Visibility="{Binding IsDefault, Converter={StaticResource ShowIf}}" />
-                            <TextBlock DockPanel.Dock="Left" Width="18" Margin="0,0,6,0"
-                                       Visibility="{Binding IsDefault, Converter={StaticResource HideIf}}" />
-                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                        </DockPanel>
-                    </Button>
+                <DataTemplate x:Key="AudioDeviceName" DataType="{x:Type w:AudioDeviceItem}">
+                    <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                 </DataTemplate>
             </Grid.Resources>
             <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" ToolTip="{Binding DeviceName}"
@@ -456,8 +446,7 @@
             <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
                 <Border Style="{StaticResource FlyoutPanel}" Width="300" c:Input.WheelCommand="{Binding ScrollCommand}">
                     <StackPanel>
-                        <TextBlock Text="Sound" Style="{StaticResource Heading}" />
-                        <TextBlock Text="{Binding DeviceName}" Style="{StaticResource Subtle}" TextTrimming="CharacterEllipsis" Margin="0,2,0,12" />
+                        <TextBlock Text="Sound" Style="{StaticResource Heading}" Margin="0,0,0,10" />
                         <DockPanel IsEnabled="{Binding HasDevice}">
                             <Button DockPanel.Dock="Left" Style="{StaticResource RoundButton}" Margin="0,0,8,0" Command="{Binding ToggleMuteCommand}" ToolTip="Mute">
                                 <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" />
@@ -467,21 +456,16 @@
                                     Value="{Binding Level, Mode=TwoWay}" LargeChange="10" SmallChange="2" />
                         </DockPanel>
 
-                        <DockPanel Margin="0,14,0,4">
-                            <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE767;" Margin="0,0,8,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
-                            <TextBlock Text="Output" Style="{StaticResource Subtle}" VerticalAlignment="Center" />
+                        <DockPanel Margin="0,12,0,0">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="14" Text="&#xE767;" Width="36" Margin="0,0,8,0" ToolTip="Output" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                            <ComboBox Style="{StaticResource FlyoutComboBox}" ItemsSource="{Binding OutputDevices}"
+                                      ItemTemplate="{StaticResource AudioDeviceName}" SelectedItem="{Binding SelectedOutput, Mode=TwoWay}" />
                         </DockPanel>
-                        <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding OutputDevices}" ItemTemplate="{StaticResource AudioDeviceRow}" />
-                        </ScrollViewer>
-
-                        <DockPanel Margin="0,10,0,4">
-                            <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE720;" Margin="0,0,8,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
-                            <TextBlock Text="Input" Style="{StaticResource Subtle}" VerticalAlignment="Center" />
+                        <DockPanel Margin="0,4,0,0">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="14" Text="&#xE720;" Width="36" Margin="0,0,8,0" ToolTip="Input" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                            <ComboBox Style="{StaticResource FlyoutComboBox}" ItemsSource="{Binding InputDevices}"
+                                      ItemTemplate="{StaticResource AudioDeviceName}" SelectedItem="{Binding SelectedInput, Mode=TwoWay}" />
                         </DockPanel>
-                        <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding InputDevices}" ItemTemplate="{StaticResource AudioDeviceRow}" />
-                        </ScrollViewer>
 
                         <Button Style="{StaticResource FlyoutButton}" Margin="0,12,0,0" Command="{Binding OpenSoundSettingsCommand}">
                             <DockPanel>

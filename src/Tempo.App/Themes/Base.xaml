@@ -83,6 +83,52 @@
         <Setter Property="Margin" Value="2,0" />
     </Style>
 
+    <!-- Put on a button's icon: like the native taskbar, it shrinks while pressed and springs back on release. -->
+    <Style x:Key="PressScale" TargetType="FrameworkElement">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform />
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource AncestorType=ButtonBase}}" Value="True">
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="0.8" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <QuadraticEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="0.8" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <QuadraticEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="0:0:0.3">
+                                <DoubleAnimation.EasingFunction>
+                                    <BackEase EasingMode="EaseOut" Amplitude="0.4" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="0:0:0.3">
+                                <DoubleAnimation.EasingFunction>
+                                    <BackEase EasingMode="EaseOut" Amplitude="0.4" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Flyouts: a popup that opens away from the bar's edge. DataContext is the widget view model. -->
     <Style x:Key="WidgetFlyout" TargetType="Popup">
         <Setter Property="AllowsTransparency" Value="True" />
@@ -166,6 +212,75 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- A compact dropdown for flyouts: a hover surface showing the selection, opening a themed list. -->
+    <Style x:Key="FlyoutComboBoxItem" TargetType="ComboBoxItem">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Surface" Background="Transparent" CornerRadius="6" Padding="8,7">
+                        <DockPanel>
+                            <TextBlock x:Name="Check" DockPanel.Dock="Left" Style="{StaticResource Icon}" FontSize="12" Width="18" Margin="0,0,6,0"
+                                       Text="&#xE73E;" Visibility="Hidden" />
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="FlyoutComboBox" TargetType="ComboBox">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <!-- The bar never takes focus; mouse wheel over the flyout stays with the volume. -->
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource Bar.Foreground}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource FlyoutComboBoxItem}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton Style="{StaticResource FlyoutButton}" Padding="10,6" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Icon}" FontSize="10" Margin="8,0,0,0"
+                                           Text="&#xE70D;" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                                <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  VerticalAlignment="Center" HorizontalAlignment="Left" IsHitTestVisible="False" />
+                            </DockPanel>
+                        </ToggleButton>
+                        <!-- Offsets cancel the panel's shadow margin so the list lines up under the box. -->
+                        <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom" PopupAnimation="Fade"
+                               HorizontalOffset="-14" VerticalOffset="-10"
+                               IsOpen="{TemplateBinding IsDropDownOpen}">
+                            <Border Style="{StaticResource FlyoutPanel}" Padding="4" CornerRadius="10"
+                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ScrollViewer MaxHeight="{TemplateBinding MaxDropDownHeight}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsPresenter />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter Property="IsEnabled" Value="False" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="MaxDropDownHeight" Value="240" />
     </Style>
 
     <!-- Context menus and tooltips on the bar, themed to match. -->

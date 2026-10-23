@@ -19,12 +19,12 @@ internal sealed class SoundSettings
     public double ScrollStep { get; set; } = 2;
 }
 
-/// <summary>One selectable endpoint in the flyout's output or input list.</summary>
+/// <summary>One selectable endpoint in the flyout's output or input dropdown.</summary>
 internal sealed record AudioDeviceItem(string Id, string Name, bool IsDefault);
 
 /// <summary>
 /// Output volume via Core Audio, plus switching the default output and input devices.
-/// Scroll to adjust the volume, click for the slider and device lists.
+/// Scroll to adjust the volume, click for the slider and device dropdowns.
 /// </summary>
 internal sealed partial class SoundWidget(WidgetContext context, SoundSettings settings) : WidgetViewModelBase(context)
 {
@@ -32,12 +32,21 @@ internal sealed partial class SoundWidget(WidgetContext context, SoundSettings s
     private MMDeviceNotificationClient? _notifications;
     private MMDevice? _device;
     private bool _syncingFromDevice;
+    private bool _fillingDeviceLists;
 
     public SoundSettings Settings { get; } = settings;
 
     public ObservableCollection<AudioDeviceItem> OutputDevices { get; } = [];
 
     public ObservableCollection<AudioDeviceItem> InputDevices { get; } = [];
+
+    /// <summary>The selected item in the output dropdown; picking another makes it the default.</summary>
+    [ObservableProperty]
+    public partial AudioDeviceItem? SelectedOutput { get; set; }
+
+    /// <summary>The selected item in the input dropdown; picking another makes it the default.</summary>
+    [ObservableProperty]
+    public partial AudioDeviceItem? SelectedInput { get; set; }
 
     [ObservableProperty]
     public partial double Level { get; set; }
@@ -73,6 +82,10 @@ internal sealed partial class SoundWidget(WidgetContext context, SoundSettings s
 
     partial void OnHasDeviceChanged(bool value) => OnPropertyChanged(nameof(Glyph));
 
+    partial void OnSelectedOutputChanged(AudioDeviceItem? value) => SelectDevice(value);
+
+    partial void OnSelectedInputChanged(AudioDeviceItem? value) => SelectDevice(value);
+
     public override void Start()
     {
         TryAudio(() =>
@@ -98,14 +111,15 @@ internal sealed partial class SoundWidget(WidgetContext context, SoundSettings s
     [RelayCommand]
     private void Scroll(int delta) => Level = Math.Clamp(Level + Math.Sign(delta) * Settings.ScrollStep, 0, 100);
 
-    [RelayCommand]
     private void SelectDevice(AudioDeviceItem? item)
     {
-        if (item is null || item.IsDefault)
+        // Refilling the lists clears and restores the selection; only a user's pick switches devices.
+        if (_fillingDeviceLists || item is null || item.IsDefault)
             return;
         TryAudio(() => AudioPolicy.SetDefaultEndpoint(item.Id));
-        // The change notification normally follows, but don't wait on it for the check mark.
-        Refresh();
+        // The change notification normally follows, but don't wait on it to update the lists. Deferred so
+        // the dropdown isn't refilled while it is still applying the selection.
+        Application.Current?.Dispatcher.BeginInvoke(Refresh);
     }
 
     [RelayCommand]
@@ -146,14 +160,23 @@ internal sealed partial class SoundWidget(WidgetContext context, SoundSettings s
     {
         if (_enumerator is null)
             return;
-        TryAudio(() =>
+        _fillingDeviceLists = true;
+        try
         {
-            Fill(OutputDevices, DataFlow.Render);
-            Fill(InputDevices, DataFlow.Capture);
-        });
+            TryAudio(() =>
+            {
+                SelectedOutput = Fill(OutputDevices, DataFlow.Render);
+                SelectedInput = Fill(InputDevices, DataFlow.Capture);
+            });
+        }
+        finally
+        {
+            _fillingDeviceLists = false;
+        }
     }
 
-    private void Fill(ObservableCollection<AudioDeviceItem> target, DataFlow flow)
+    /// <summary>Refills <paramref name="target"/> with the active endpoints and returns the default one.</summary>
+    private AudioDeviceItem? Fill(ObservableCollection<AudioDeviceItem> target, DataFlow flow)
     {
         string? defaultId = null;
         if (_enumerator!.TryGetDefaultAudioEndpoint(flow, Role.Multimedia, out var defaultDevice) && defaultDevice is not null)
@@ -172,6 +195,7 @@ internal sealed partial class SoundWidget(WidgetContext context, SoundSettings s
         target.Clear();
         foreach (var item in items.OrderBy(i => i.Name, StringComparer.CurrentCultureIgnoreCase))
             target.Add(item);
+        return items.FirstOrDefault(i => i.IsDefault);
     }
 
     private void OnVolumeNotification(AudioVolumeNotificationData data) =>

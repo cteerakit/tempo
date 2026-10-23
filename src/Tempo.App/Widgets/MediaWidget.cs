@@ -92,7 +92,17 @@ internal sealed partial class MediaWidget(WidgetContext context, MediaSettings s
     }
 
     [RelayCommand]
-    private Task PlayPause() => Run(s => s.TryTogglePlayPauseAsync().AsTask());
+    private Task PlayPause() => Run(async session =>
+    {
+        var playback = session.GetPlaybackInfo();
+        var accepted = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing
+            ? await session.TryPauseAsync()
+            : await session.TryPlayAsync();
+
+        if (session == _session)
+            UpdatePlayback(session);
+        return accepted;
+    });
 
     [RelayCommand]
     private Task Next() => Run(s => s.TrySkipNextAsync().AsTask());
