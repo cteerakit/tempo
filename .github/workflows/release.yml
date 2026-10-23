@@ -50,7 +50,14 @@ jobs:
           vpk pack -u Tempo -v ${{ steps.version.outputs.value }} -p publish -e Tempo.exe
           --packTitle Tempo --packAuthors "Teerakit Chantrakul" -i src/Tempo.App/Assets/Tempo.ico -o Releases
 
-      - name: Upload to GitHub Releases
-        run: >
-          vpk upload github --repoUrl ${{ github.server_url }}/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
-          -o Releases --publish --tag ${{ github.ref_name }} --releaseName "Tempo ${{ steps.version.outputs.value }}"
+      # Only what installs and updates need: no portable zip or legacy RELEASES file,
+      # and not the previous version's package that was downloaded above.
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $files = @('Releases/Tempo-win-Setup.exe', 'Releases/releases.win.json', "Releases/Tempo-$version-full.nupkg")
+          if (Test-Path "Releases/Tempo-$version-delta.nupkg") { $files += "Releases/Tempo-$version-delta.nupkg" }
+          gh release create '${{ github.ref_name }}' @files --verify-tag --title "Tempo $version" --notes ''
