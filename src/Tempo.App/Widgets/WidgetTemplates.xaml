@@ -1,0 +1,662 @@
+<ResourceDictionary x:Class="Tempo.App.Widgets.WidgetTemplates"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:w="clr-namespace:Tempo.App.Widgets"
+                    xmlns:c="clr-namespace:Tempo.App.Controls">
+
+    <!-- One implicit DataTemplate per widget view model. Bar colours are DynamicResources from the theme. -->
+
+    <DataTemplate DataType="{x:Type w:PomodoroWidget}">
+        <Grid>
+            <ToggleButton x:Name="TimerToggle" Style="{StaticResource WidgetButton}"
+                          IsChecked="{Binding IsFlyoutOpen}" ToolTip="Pomodoro timer"
+                          AutomationProperties.Name="Pomodoro timer">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE916;" Margin="0,0,7,0" />
+                    <TextBlock Text="{Binding Countdown}" VerticalAlignment="Center" />
+                </StackPanel>
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=TimerToggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="300">
+                    <StackPanel>
+                        <TextBlock Text="Pomodoro" Style="{StaticResource Heading}" />
+                        <TextBlock Text="{Binding Phase}" HorizontalAlignment="Center" Margin="0,16,0,0" />
+                        <TextBlock Text="{Binding Countdown}" FontSize="40" HorizontalAlignment="Center" Margin="0,4,0,12" />
+                        <Button Style="{StaticResource FlyoutButton}" Content="{Binding ActionLabel}" Command="{Binding ToggleCommand}" AutomationProperties.Name="Start or pause timer" />
+                        <UniformGrid Columns="2" Margin="0,6,0,12">
+                            <Button Style="{StaticResource FlyoutButton}" Content="Reset" Command="{Binding ResetCommand}" ToolTip="Reset the current session" />
+                            <Button Style="{StaticResource FlyoutButton}" Content="Skip" Command="{Binding SkipCommand}" ToolTip="Skip to the next session" />
+                        </UniformGrid>
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Subtle}" TextWrapping="Wrap" />
+                        <TextBlock Text="Start each focus or break session when you're ready." Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Start -->
+    <DataTemplate DataType="{x:Type w:StartWidget}">
+        <Button Style="{StaticResource WidgetButton}" Padding="0" Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
+                Command="{Binding OpenCommand}" ToolTip="Start">
+            <Path Width="{Binding Bar.GlyphSize}" Height="{Binding Bar.GlyphSize}" Stretch="Uniform" Fill="{DynamicResource Accent}"
+                  Data="M0,0 H7 V7 H0 Z M8,0 H15 V7 H8 Z M0,8 H7 V15 H0 Z M8,8 H15 V15 H8 Z" />
+        </Button>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type w:PinSetSwitcherWidget}">
+        <Button Style="{StaticResource WidgetButton}"
+                      Command="{Binding CycleSetCommand}" ToolTip="{Binding ActiveName}"
+                      AutomationProperties.Name="{Binding ActiveName}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource Icon}" Text="{Binding ActiveIcon}" />
+                <TextBlock Text="{Binding ActiveName}" VerticalAlignment="Center" Margin="7,0,0,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowText}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </Button>
+    </DataTemplate>
+
+    <!-- Apps -->
+    <DataTemplate DataType="{x:Type w:AppsWidget}">
+        <!-- Drag an icon sideways to reorder; see WidgetTemplates.xaml.cs. -->
+        <ItemsControl ItemsSource="{Binding Entries}" Focusable="False" Background="Transparent"
+                      PreviewMouseLeftButtonDown="Apps_PreviewMouseLeftButtonDown"
+                      PreviewMouseMove="Apps_PreviewMouseMove"
+                      PreviewMouseLeftButtonUp="Apps_PreviewMouseLeftButtonUp"
+                      LostMouseCapture="Apps_LostMouseCapture">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <c:AppsPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type w:AppEntry}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="1" Margin="6,11" Background="{DynamicResource Bar.Border}"
+                                IsHitTestVisible="False"
+                                Visibility="{Binding ShowSeparatorBefore, Converter={StaticResource ShowIf}}" />
+                        <!-- Square (1:1) hover surface: width follows the bar-driven height. Labels switch to auto width. -->
+                        <Button Grid.Column="1" x:Name="AppButton" Style="{StaticResource WidgetButton}" Padding="0"
+                                Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}}"
+                                ToolTip="{Binding ToolTip}"
+                                Command="{Binding Owner.ClickCommand}" CommandParameter="{Binding}"
+                                c:Input.MiddleClickCommand="{Binding Owner.LaunchCommand}" c:Input.MiddleClickParameter="{Binding}"
+                                ContextMenuOpening="AppButton_ContextMenuOpening">
+                            <Button.ContextMenu>
+                                <ContextMenu />
+                            </Button.ContextMenu>
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="{Binding Owner.Bar.IconSize}" Height="{Binding Owner.Bar.IconSize}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE71D;" Opacity="0.7"
+                                               Visibility="{Binding Icon, Converter={StaticResource HideIf}}" />
+                                    <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality" />
+                                </Grid>
+                                <TextBlock Text="{Binding Name}" Margin="8,0,2,0" MaxWidth="130" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding Owner.Settings.ShowLabels, Converter={StaticResource ShowIf}}" />
+                            </StackPanel>
+                        </Button>
+                        <Border Grid.Column="1" x:Name="Indicator" Height="3" Width="16" CornerRadius="1.5" Margin="0,0,0,4"
+                                VerticalAlignment="Bottom" HorizontalAlignment="Center" IsHitTestVisible="False"
+                                Background="{DynamicResource Bar.SubtleForeground}"
+                                Visibility="{Binding IsRunning, Converter={StaticResource ShowIf}}" />
+
+                        <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=AppButton}"
+                               Placement="{Binding Owner.Bar.FlyoutPlacement}" VerticalOffset="{Binding Owner.Bar.FlyoutOffset}"
+                               IsOpen="{Binding IsWindowListOpen}">
+                            <Border Style="{StaticResource FlyoutPanel}" Padding="6" MinWidth="240">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Subtle}" Margin="10,4,10,6" />
+                                    <ItemsControl ItemsSource="{Binding Windows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type w:AppWindowItem}">
+                                                <Button x:Name="WindowButton" Style="{StaticResource FlyoutButton}"
+                                                        Command="{Binding DataContext.Owner.ActivateWindowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Padding="6,4" Margin="8,0,0,0" ToolTip="Close window"
+                                                                Command="{Binding DataContext.Owner.CloseWindowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <TextBlock Style="{StaticResource Icon}" FontSize="10" Text="&#xE711;" />
+                                                        </Button>
+                                                        <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                        <TextBlock x:Name="WindowTitle" Text="{Binding Title}" MaxWidth="320" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </Button>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                        <Setter TargetName="WindowButton" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsMinimized}" Value="True">
+                                                        <Setter TargetName="WindowTitle" Property="Opacity" Value="0.6" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsActive}" Value="False" />
+                                <Condition Binding="{Binding IsFlashing}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Width"
+                                                         To="6" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiDataTrigger.EnterActions>
+                            <MultiDataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Indicator" Storyboard.TargetProperty="Width"
+                                                         To="16" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiDataTrigger.ExitActions>
+                        </MultiDataTrigger>
+                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                            <Setter TargetName="Indicator" Property="Background" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="AppButton" Property="Background" Value="{DynamicResource Widget.PressedBackground}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsFlashing}" Value="True">
+                            <Setter TargetName="Indicator" Property="Background" Value="#FFF59E0B" />
+                            <Setter TargetName="AppButton" Property="Background" Value="#40F59E0B" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                            <Setter TargetName="AppButton" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                            <Setter TargetName="AppButton" Property="Opacity" Value="0.75" />
+                            <Setter TargetName="AppButton" Property="ToolTipService.IsEnabled" Value="False" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Owner.Settings.ShowLabels}" Value="True">
+                            <Setter TargetName="AppButton" Property="Width" Value="NaN" />
+                            <Setter TargetName="AppButton" Property="Padding" Value="7,0" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NotificationsPanel">
+        <Border Style="{StaticResource FlyoutPanel}" Width="360">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource FlyoutButton}" Command="{Binding RefreshCommand}" ToolTip="Refresh notifications">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" />
+                    </Button>
+                    <TextBlock Text="Notifications" Style="{StaticResource Heading}" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Style="{StaticResource Subtle}" Margin="0,0,0,12"
+                           Visibility="{Binding Message, Converter={StaticResource ShowIf}}" />
+                <TextBlock Text="Checking notifications…" Style="{StaticResource Subtle}" Visibility="{Binding IsBusy, Converter={StaticResource ShowIf}}" />
+                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource Widget.HoverBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource FlyoutButton}" ToolTip="Dismiss notification"
+                                                    Command="{Binding DataContext.DismissCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}">
+                                                <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="10" />
+                                            </Button>
+                                            <TextBlock Text="{Binding AppName}" Style="{StaticResource Subtle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,5,0,3" />
+                                        <TextBlock Text="{Binding Body}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Subtle}" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Button Style="{StaticResource FlyoutButton}" Content="Allow notification access" Command="{Binding EnableAccessCommand}"
+                        Visibility="{Binding HasAccess, Converter={StaticResource HideIf}}" />
+                <Button Style="{StaticResource FlyoutButton}" Content="Notification access settings" Command="{Binding OpenSettingsCommand}" />
+                <Button Style="{StaticResource FlyoutButton}" Content="Open Windows notifications" Command="{Binding OpenWindowsNotificationsCommand}" />
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type w:NotificationsWidget}">
+        <Grid>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" ToolTip="Notifications" IsChecked="{Binding IsFlyoutOpen}">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xEA8F;" />
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource NotificationsPanel}" />
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Clock -->
+    <DataTemplate DataType="{x:Type w:ClockWidget}">
+        <Grid>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" Padding="10,0"
+                          IsChecked="{Binding IsFlyoutOpen}">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Settings.Stacked, Converter={StaticResource HideIf}}">
+                        <TextBlock Text="{Binding Time}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Date}" Foreground="{DynamicResource Bar.SubtleForeground}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   Visibility="{Binding Date, Converter={StaticResource ShowIf}}" />
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center" Visibility="{Binding Settings.Stacked, Converter={StaticResource ShowIf}}">
+                        <TextBlock Text="{Binding Time}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding Date}" FontSize="11" Foreground="{DynamicResource Bar.SubtleForeground}" HorizontalAlignment="Right"
+                                   Visibility="{Binding Date, Converter={StaticResource ShowIf}}" />
+                    </StackPanel>
+                </Grid>
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="306">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Time}" FontSize="32" FontWeight="Light" />
+                        <TextBlock Text="{Binding LongDate}" Style="{StaticResource Subtle}" FontSize="12.5" Margin="0,0,0,14" />
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Padding="8,6" Margin="0" Command="{Binding NextMonthCommand}" ToolTip="Next month">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="11" Text="&#xE70D;" />
+                            </Button>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Padding="8,6" Margin="0" Command="{Binding PreviousMonthCommand}" ToolTip="Previous month">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="11" Text="&#xE70E;" />
+                            </Button>
+                            <TextBlock Text="{Binding MonthTitle}" Style="{StaticResource Heading}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding WeekdayNames}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="7" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Style="{StaticResource Subtle}" HorizontalAlignment="Center" Margin="0,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ItemsControl ItemsSource="{Binding Days}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="7" Rows="6" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type w:CalendarDay}">
+                                    <Border x:Name="Cell" Width="32" Height="32" CornerRadius="16" Margin="1" Background="Transparent">
+                                        <TextBlock x:Name="Number" Text="{Binding Day}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12.5" />
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                            <Setter TargetName="Number" Property="Opacity" Value="0.35" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                            <Setter TargetName="Cell" Property="Background" Value="{DynamicResource Accent}" />
+                                            <Setter TargetName="Number" Property="Foreground" Value="{DynamicResource Accent.Foreground}" />
+                                            <Setter TargetName="Number" Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Now playing -->
+    <DataTemplate DataType="{x:Type w:MediaWidget}">
+        <Grid>
+            <StackPanel Orientation="Horizontal">
+                <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" Padding="6,0" MaxWidth="{Binding Settings.MaxWidth}"
+                              IsChecked="{Binding IsFlyoutOpen}"
+                              ToolTip="{Binding Summary}">
+                    <DockPanel>
+                        <Grid x:Name="MediaArtwork" DockPanel.Dock="Left" Width="{Binding Bar.IconSize}" Height="{Binding Bar.IconSize}" Margin="0,0,8,0"
+                              Visibility="{Binding Settings.ShowArtwork, Converter={StaticResource ShowIf}}">
+                            <Border CornerRadius="5" Background="{DynamicResource Widget.HoverBackground}">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="12" Text="&#xEC4F;" />
+                            </Border>
+                            <Border CornerRadius="5" Visibility="{Binding Artwork, Converter={StaticResource ShowIf}}">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Artwork}" Stretch="UniformToFill" />
+                                </Border.Background>
+                            </Border>
+                        </Grid>
+                        <TextBlock x:Name="MediaSummary" Text="{Binding Summary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                   Visibility="{Binding HasSession, Converter={StaticResource ShowIf}}" />
+                        <TextBlock x:Name="MediaIdle" Text="Nothing playing" Foreground="{DynamicResource Bar.SubtleForeground}" VerticalAlignment="Center"
+                                   Visibility="{Binding HasSession, Converter={StaticResource HideIf}}" />
+                    </DockPanel>
+                </ToggleButton>
+                <StackPanel x:Name="MediaControls" Orientation="Horizontal" Visibility="{Binding Settings.ShowControls, Converter={StaticResource ShowIf}}">
+                    <StackPanel Orientation="Horizontal" IsEnabled="{Binding HasSession}">
+                        <Button x:Name="MediaPrevious" Style="{StaticResource WidgetButton}" Padding="6,0" Command="{Binding PreviousCommand}" ToolTip="Previous">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="&#xE892;" />
+                        </Button>
+                        <Button Style="{StaticResource WidgetButton}" Padding="6,0" Command="{Binding PlayPauseCommand}" ToolTip="Play / pause">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="{Binding PlayPauseGlyph}" />
+                        </Button>
+                        <Button x:Name="MediaNext" Style="{StaticResource WidgetButton}" Padding="6,0" Command="{Binding NextCommand}" ToolTip="Next">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="&#xE893;" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="280">
+                    <StackPanel>
+                        <Grid Height="250" Margin="0,0,0,14">
+                            <Border CornerRadius="10" Background="{DynamicResource Widget.HoverBackground}">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="48" Text="&#xEC4F;" Opacity="0.6" />
+                            </Border>
+                            <Border CornerRadius="10" Visibility="{Binding Artwork, Converter={StaticResource ShowIf}}">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Artwork}" Stretch="UniformToFill" />
+                                </Border.Background>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Heading}" FontSize="15" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Artist}" Style="{StaticResource Subtle}" FontSize="12.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,10" />
+                        <TextBlock Text="Nothing is playing right now." Style="{StaticResource Subtle}" FontSize="12.5"
+                                   Visibility="{Binding HasSession, Converter={StaticResource HideIf}}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding HasSession, Converter={StaticResource ShowIf}}">
+                            <Button Style="{StaticResource RoundButton}" Command="{Binding PreviousCommand}" ToolTip="Previous">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="15" Text="&#xE892;" />
+                            </Button>
+                            <Button Style="{StaticResource RoundButton}" Width="44" Height="44" Background="{DynamicResource Widget.HoverBackground}"
+                                    Command="{Binding PlayPauseCommand}" ToolTip="Play / pause">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="18" Text="{Binding PlayPauseGlyph}" />
+                            </Button>
+                            <Button Style="{StaticResource RoundButton}" Command="{Binding NextCommand}" ToolTip="Next">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="15" Text="&#xE893;" />
+                            </Button>
+                        </StackPanel>
+                        <Button Style="{StaticResource FlyoutButton}" Margin="0,10,0,0" Command="{Binding OpenSourceAppCommand}"
+                                Visibility="{Binding SourceApp, Converter={StaticResource ShowIf}}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE8A7;" Margin="0,0,10,0" />
+                                <TextBlock Text="Open player" />
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding HasSession}" Value="False">
+                <Setter TargetName="MediaControls" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Settings.Minimized}" Value="True">
+                <Setter TargetName="MediaArtwork" Property="Visibility" Value="Visible" />
+                <Setter TargetName="MediaArtwork" Property="Margin" Value="0" />
+                <Setter TargetName="MediaSummary" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="MediaIdle" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="MediaControls" Property="Visibility" Value="Visible" />
+                <Setter TargetName="MediaPrevious" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="MediaNext" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- Sound: volume plus default output / input device switching -->
+    <DataTemplate DataType="{x:Type w:SoundWidget}">
+        <Grid>
+            <Grid.Resources>
+                <DataTemplate x:Key="AudioDeviceRow" DataType="{x:Type w:AudioDeviceItem}">
+                    <Button Style="{StaticResource FlyoutButton}" Padding="10,6"
+                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}" ToolTip="{Binding Name}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" FontSize="12" Width="18" Margin="0,0,6,0"
+                                       Text="&#xE73E;" Visibility="{Binding IsDefault, Converter={StaticResource ShowIf}}" />
+                            <TextBlock DockPanel.Dock="Left" Width="18" Margin="0,0,6,0"
+                                       Visibility="{Binding IsDefault, Converter={StaticResource HideIf}}" />
+                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Button>
+                </DataTemplate>
+            </Grid.Resources>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" ToolTip="{Binding DeviceName}"
+                          IsChecked="{Binding IsFlyoutOpen}"
+                          c:Input.WheelCommand="{Binding ScrollCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" />
+                    <TextBlock Text="{Binding Level, StringFormat={}{0:0}%}" Margin="6,0,0,0" VerticalAlignment="Center"
+                               Visibility="{Binding Settings.ShowPercent, Converter={StaticResource ShowIf}}" />
+                </StackPanel>
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="300" c:Input.WheelCommand="{Binding ScrollCommand}">
+                    <StackPanel>
+                        <TextBlock Text="Sound" Style="{StaticResource Heading}" />
+                        <TextBlock Text="{Binding DeviceName}" Style="{StaticResource Subtle}" TextTrimming="CharacterEllipsis" Margin="0,2,0,12" />
+                        <DockPanel IsEnabled="{Binding HasDevice}">
+                            <Button DockPanel.Dock="Left" Style="{StaticResource RoundButton}" Margin="0,0,8,0" Command="{Binding ToggleMuteCommand}" ToolTip="Mute">
+                                <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" />
+                            </Button>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Level, StringFormat={}{0:0}}" Width="30" TextAlignment="Right" VerticalAlignment="Center" />
+                            <Slider Style="{StaticResource BarSlider}" Minimum="0" Maximum="100" VerticalAlignment="Center"
+                                    Value="{Binding Level, Mode=TwoWay}" LargeChange="10" SmallChange="2" />
+                        </DockPanel>
+
+                        <DockPanel Margin="0,14,0,4">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE767;" Margin="0,0,8,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                            <TextBlock Text="Output" Style="{StaticResource Subtle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding OutputDevices}" ItemTemplate="{StaticResource AudioDeviceRow}" />
+                        </ScrollViewer>
+
+                        <DockPanel Margin="0,10,0,4">
+                            <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE720;" Margin="0,0,8,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                            <TextBlock Text="Input" Style="{StaticResource Subtle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding InputDevices}" ItemTemplate="{StaticResource AudioDeviceRow}" />
+                        </ScrollViewer>
+
+                        <Button Style="{StaticResource FlyoutButton}" Margin="0,12,0,0" Command="{Binding OpenSoundSettingsCommand}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE713;" Margin="0,0,10,0" />
+                                <TextBlock Text="Sound settings" />
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Network -->
+    <DataTemplate DataType="{x:Type w:NetworkWidget}">
+        <Grid>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" IsChecked="{Binding IsFlyoutOpen}" ToolTip="{Binding Status}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" />
+                    <TextBlock Text="{Binding Name}" Margin="7,0,0,0" MaxWidth="140" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                               Visibility="{Binding Settings.ShowName, Converter={StaticResource ShowIf}}" />
+                </StackPanel>
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="330">
+                    <StackPanel>
+                        <TextBlock Text="Network" Style="{StaticResource Heading}" />
+                        <DockPanel Margin="0,14,0,16">
+                            <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" FontSize="24" Margin="0,0,12,0" />
+                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Connections}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource Widget.HoverBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Kind}" Style="{StaticResource Subtle}" Margin="0,3,0,0" />
+                                                <TextBlock Text="{Binding Address}" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <Button Style="{StaticResource FlyoutButton}" Content="Manage Wi-Fi connections" Command="{Binding ManageWifiCommand}" Margin="0,8,0,0" />
+                        <Button Style="{StaticResource FlyoutButton}" Content="Network settings" Command="{Binding OpenNetworkSettingsCommand}" />
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- System stats -->
+    <DataTemplate DataType="{x:Type w:SystemWidget}">
+        <Grid>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}"
+                          IsChecked="{Binding IsFlyoutOpen}">
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0" Visibility="{Binding Settings.ShowCpu, Converter={StaticResource ShowIf}}">
+                        <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="&#xE950;" Margin="0,0,5,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                        <TextBlock Text="{Binding CpuPercent, StringFormat={}{0:0}%}" VerticalAlignment="Center" MinWidth="28" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0" Visibility="{Binding Settings.ShowMemory, Converter={StaticResource ShowIf}}">
+                        <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="&#xE964;" Margin="0,0,5,0" Foreground="{DynamicResource Bar.SubtleForeground}" />
+                        <TextBlock Text="{Binding MemoryPercent, StringFormat={}{0:0}%}" VerticalAlignment="Center" MinWidth="28" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0" Visibility="{Binding ShowBatteryItem, Converter={StaticResource ShowIf}}">
+                        <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.GlyphSize}" Text="{Binding BatteryGlyph}" Margin="0,0,5,0" />
+                        <TextBlock Text="{Binding BatteryPercent, StringFormat={}{0:0}%}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="280">
+                    <StackPanel>
+                        <TextBlock Text="System" Style="{StaticResource Heading}" Margin="0,0,0,12" />
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding CpuPercent, StringFormat={}{0:0}%}" />
+                            <TextBlock Text="Processor" />
+                        </DockPanel>
+                        <Grid Height="6" Margin="0,6,0,14">
+                            <Border CornerRadius="3" Background="{DynamicResource Widget.HoverBackground}" />
+                            <Border CornerRadius="3" Background="{DynamicResource Accent}" HorizontalAlignment="Left"
+                                    Width="{Binding CpuPercent, Converter={StaticResource PercentToLength}, ConverterParameter=250}" />
+                        </Grid>
+
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding MemoryPercent, StringFormat={}{0:0}%}" />
+                            <TextBlock Text="Memory" />
+                        </DockPanel>
+                        <Grid Height="6" Margin="0,6,0,4">
+                            <Border CornerRadius="3" Background="{DynamicResource Widget.HoverBackground}" />
+                            <Border CornerRadius="3" Background="{DynamicResource Accent}" HorizontalAlignment="Left"
+                                    Width="{Binding MemoryPercent, Converter={StaticResource PercentToLength}, ConverterParameter=250}" />
+                        </Grid>
+                        <TextBlock Text="{Binding MemoryDetail}" Style="{StaticResource Subtle}" Margin="0,0,0,14" />
+
+                        <StackPanel Visibility="{Binding HasBattery, Converter={StaticResource ShowIf}}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding BatteryPercent, StringFormat={}{0:0}%}" />
+                                <TextBlock Text="Battery" />
+                            </DockPanel>
+                            <Grid Height="6" Margin="0,6,0,4">
+                                <Border CornerRadius="3" Background="{DynamicResource Widget.HoverBackground}" />
+                                <Border CornerRadius="3" Background="{DynamicResource Accent}" HorizontalAlignment="Left"
+                                        Width="{Binding BatteryPercent, Converter={StaticResource PercentToLength}, ConverterParameter=250}" />
+                            </Grid>
+                            <TextBlock Text="{Binding BatteryDetail}" Style="{StaticResource Subtle}" Margin="0,0,0,14" />
+                        </StackPanel>
+
+                        <Button Style="{StaticResource FlyoutButton}" Command="{Binding OpenTaskManagerCommand}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE9D9;" Margin="0,0,10,0" />
+                                <TextBlock Text="Task Manager" />
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Windows taskbar toggle -->
+    <DataTemplate DataType="{x:Type w:TaskbarToggleWidget}">
+        <ToggleButton Style="{StaticResource WidgetButton}" IsChecked="{Binding IsNativeTaskbarShown}"
+                      ToolTip="Show the Windows taskbar (for tray icons). Click again to hide it.">
+            <TextBlock Style="{StaticResource Icon}" FontSize="{DynamicResource Bar.SmallGlyphSize}" Text="&#xE70E;" />
+        </ToggleButton>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type w:HiddenIconsWidget}">
+        <Grid>
+            <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" IsChecked="{Binding IsFlyoutOpen}"
+                          ToolTip="Show hidden icons" AutomationProperties.Name="Show hidden icons">
+                <TextBlock Style="{StaticResource Icon}" FontSize="{Binding Bar.GlyphSize}" Text="&#xE70E;" />
+            </ToggleButton>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Width="276">
+                    <StackPanel>
+                        <TextBlock Text="Notification icons" Style="{StaticResource Heading}" Margin="0,0,0,12" />
+                        <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Icons}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource WidgetButton}" Width="44" Height="44" Padding="10" Margin="2"
+                                                ToolTip="{Binding Title}" AutomationProperties.Name="{Binding Title}"
+                                                PreviewMouseDown="TrayIcon_MouseDown" PreviewMouseUp="TrayIcon_MouseUp"
+                                                MouseEnter="TrayIcon_MouseEnter" MouseLeave="TrayIcon_MouseLeave"
+                                                MouseMove="TrayIcon_MouseMove" Click="TrayIcon_Click">
+                                            <Image Source="{Binding Icon}" Width="24" Height="24" Stretch="Uniform" />
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
+    </DataTemplate>
+
+    <!-- Layout helpers -->
+    <DataTemplate DataType="{x:Type w:SpacerWidget}">
+        <Border Width="{Binding Width}" Background="Transparent" />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type w:SeparatorWidget}">
+        <Border Width="1" Margin="6,11" Background="{DynamicResource Bar.Border}" />
+    </DataTemplate>
+</ResourceDictionary>
+

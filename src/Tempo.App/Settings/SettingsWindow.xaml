@@ -1,0 +1,327 @@
+<Window x:Class="Tempo.App.Settings.SettingsWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:Tempo.App.Settings"
+        xmlns:w="clr-namespace:Tempo.App.Widgets"
+        xmlns:layout="clr-namespace:Tempo.Core.Layout;assembly=Tempo.Core"
+        ThemeMode="System"
+        Title="Tempo settings"
+        Icon="/Tempo;component/Assets/Tempo.ico"
+        Width="1080" Height="740" MinWidth="900" MinHeight="580"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <Style x:Key="Section" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,18,0,8" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+        <Style x:Key="GlyphText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <DataTemplate x:Key="OptionWithDescription">
+            <StackPanel Margin="0,2">
+                <TextBlock Text="{Binding Label}" />
+                <TextBlock Text="{Binding Description}" Style="{StaticResource Hint}" />
+            </StackPanel>
+        </DataTemplate>
+
+    </Window.Resources>
+
+    <Grid Margin="20,12,20,20">
+        <TabControl>
+            <TabItem Header="Widgets" AutomationProperties.AutomationId="TabWidgets">
+                <DockPanel Margin="0,16,0,0">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+                        <TextBlock Text="Widgets" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock Text="Click a widget to add it to the right side of your bar. Drag widgets on the bar to arrange them." Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                        <TextBlock Text="Right-click a widget on the bar to change its options or remove it." Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding WidgetStatus}" Margin="0,8,0,0" AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Library}" AutomationProperties.Name="Widget collection">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type w:WidgetDescriptor}">
+                                    <Button Width="300" Height="156" Margin="0,0,14,14" Padding="18" HorizontalContentAlignment="Stretch"
+                                            Command="{Binding DataContext.AddWidgetCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                            AutomationProperties.Name="{Binding DisplayName, StringFormat=Add {0}}">
+                                        <StackPanel>
+                                            <TextBlock Style="{StaticResource GlyphText}" Text="{Binding Glyph}" FontSize="24" />
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="SemiBold" Margin="0,12,0,6" />
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Hint}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
+
+            <TabItem Header="Pinned apps" AutomationProperties.AutomationId="TabPinnedApps">
+                <StackPanel Margin="0,16,0,0" MaxWidth="620" HorizontalAlignment="Left">
+                    <TextBlock Text="Pinned app sets" Style="{StaticResource Section}" Margin="0,0,0,8" />
+                    <TextBlock Text="Create sets for different activities. Use the Pinned app sets widget to switch between them on your bar."
+                               Style="{StaticResource Hint}" Margin="0,0,0,16" />
+                    <TextBlock Text="Active set" Margin="0,0,0,6" />
+                    <ComboBox ItemsSource="{Binding Sets}" SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
+                              DisplayMemberPath="Name" AutomationProperties.Name="Active pinned app set"
+                              AutomationProperties.AutomationId="CmbPinSet" MinWidth="300" HorizontalAlignment="Left" />
+                    <TextBlock Text="Set icon" Margin="0,16,0,6" />
+                    <ListBox ItemsSource="{Binding SetIcons}" SelectedValuePath="Value"
+                              SelectedValue="{Binding SetIcon, Mode=TwoWay}"
+                              Width="460" HorizontalAlignment="Left" AutomationProperties.Name="Set icon"
+                              AutomationProperties.AutomationId="LstPinSetIcon"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Width" Value="88" />
+                                <Setter Property="Height" Value="54" />
+                                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                <Setter Property="VerticalContentAlignment" Value="Center" />
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Value}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="18" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <CheckBox Content="Show icon only (hide set name)" IsChecked="{Binding SetIconOnly}"
+                              Margin="0,10,0,0" AutomationProperties.AutomationId="ChkPinSetIconOnly" />
+                    <TextBlock Text="Set name" Margin="0,20,0,6" />
+                    <TextBox Text="{Binding SetName, UpdateSourceTrigger=PropertyChanged}" MaxLength="60"
+                             Width="300" HorizontalAlignment="Left" AutomationProperties.Name="Set name"
+                             AutomationProperties.AutomationId="TxtPinSetName" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Create set" Command="{Binding CreateCommand}" AutomationProperties.AutomationId="BtnCreatePinSet" />
+                        <Button Content="Rename selected" Command="{Binding RenameCommand}" Margin="8,0,0,0"
+                                AutomationProperties.AutomationId="BtnRenamePinSet" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,10,0,0"
+                               AutomationProperties.LiveSetting="Polite" />
+                    <TextBlock Text="New sets start empty. Right-click a running app on the bar to pin it to the active set. Drag apps to set their order. Open windows remain visible in every set. Your original pins and Windows taskbar pins are kept in Default."
+                               Style="{StaticResource Hint}" Margin="0,16,0,0" />
+                </StackPanel>
+            </TabItem>
+
+            <!-- ───────────── Appearance ───────────── -->
+            <TabItem Header="Appearance" AutomationProperties.AutomationId="TabAppearance">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                    <StackPanel Margin="0,4,0,0">
+                        <TextBlock Text="Theme" Style="{StaticResource Section}" />
+                        <ListBox ItemsSource="{Binding Themes}" AutomationProperties.AutomationId="ThemeList" SelectedValuePath="Id" SelectedValue="{Binding ThemeId}"
+                                 Background="Transparent" BorderThickness="0" AutomationProperties.Name="Themes"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type s:ThemeCard}">
+                                    <StackPanel Width="210" Margin="4" AutomationProperties.Name="{Binding Name}">
+                                        <Border Height="84" CornerRadius="8" ClipToBounds="True">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FF4F46E5" Offset="0" />
+                                                    <GradientStop Color="#FFDB2777" Offset="0.6" />
+                                                    <GradientStop Color="#FFF59E0B" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Border Height="30" Margin="12,0,12,12" VerticalAlignment="Bottom" CornerRadius="15"
+                                                    Background="{Binding Background}" BorderBrush="{Binding Border}" BorderThickness="1">
+                                                <DockPanel Margin="12,0">
+                                                    <Path DockPanel.Dock="Left" Width="11" Height="11" Fill="{Binding Accent}" VerticalAlignment="Center"
+                                                          Data="M0,0 H5 V5 H0 Z M6,0 H11 V5 H6 Z M0,6 H5 V11 H0 Z M6,6 H11 V11 H6 Z" />
+                                                    <TextBlock DockPanel.Dock="Right" Text="12:30" Foreground="{Binding Foreground}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" />
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Border Width="12" Height="12" CornerRadius="3" Background="{Binding Foreground}" Opacity="0.85" Margin="3,0" />
+                                                        <Border Width="12" Height="12" CornerRadius="3" Background="{Binding Accent}" Margin="3,0" />
+                                                        <Border Width="12" Height="12" CornerRadius="3" Background="{Binding Foreground}" Opacity="0.5" Margin="3,0" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </Border>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="2,8,0,0" />
+                                        <TextBlock Text="{Binding Description}" Style="{StaticResource Hint}" Margin="2,0,0,4" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Text="Accent colour" Style="{StaticResource Section}" />
+                        <StackPanel Orientation="Horizontal">
+                            <ItemsControl ItemsSource="{Binding AccentPresets}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Margin="0,0,8,0" Padding="4" ToolTip="{Binding Label}" AutomationProperties.AutomationId="{Binding Label, StringFormat=Accent{0}}" AutomationProperties.Name="{Binding Label}"
+                                                Command="{Binding DataContext.SetAccentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding Value}">
+                                            <Grid Width="26" Height="26">
+                                                <Ellipse Fill="{Binding Value, TargetNullValue=Transparent}" Stroke="#40808080" StrokeThickness="1" />
+                                                <TextBlock Text="Aa" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           Visibility="{Binding Value, Converter={StaticResource HideIf}}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBox Width="110" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip="Custom colour, e.g. #FF8800"
+                                     AutomationProperties.Name="Custom accent colour"
+                                     AutomationProperties.AutomationId="TxtAccent" Text="{Binding AccentColor, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" />
+                        </StackPanel>
+
+                        <TextBlock Text="Bar background" Style="{StaticResource Section}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="170" />
+                                <ColumnDefinition Width="300" />
+                                <ColumnDefinition Width="60" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Opacity" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding TintOpacity}" AutomationProperties.Name="Background opacity" AutomationProperties.AutomationId="SldOpacity" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding TintOpacity, StringFormat={}{0:P0}}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            <Button Grid.Column="3" Content="Reset" Command="{Binding ResetAppearanceCommand}" CommandParameter="tint" Margin="0,4" />
+
+                            <TextBlock Grid.Row="1" Text="Blur" VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Backdrops}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding Backdrop}" AutomationProperties.Name="Blur" AutomationProperties.AutomationId="CmbBackdrop" Margin="0,6" />
+
+                            <TextBlock Grid.Row="2" Text="Blur strength" VerticalAlignment="Center" />
+                            <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding BlurStrength}"
+                                    IsSnapToTickEnabled="True" TickFrequency="1" IsEnabled="{Binding IsBlurEnabled}"
+                                    AutomationProperties.Name="Blur strength" AutomationProperties.AutomationId="SldBlurStrength" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding BlurStrength, StringFormat={}{0:0}%}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            <Button Grid.Row="2" Grid.Column="3" Content="Reset" Command="{Binding ResetAppearanceCommand}" CommandParameter="blurStrength" Margin="0,4" />
+
+                            <TextBlock Grid.Row="3" Text="Corner radius (pill)" VerticalAlignment="Center" />
+                            <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="36" Value="{Binding CornerRadius}" IsSnapToTickEnabled="True" TickFrequency="1"
+                                    AutomationProperties.Name="Corner radius" AutomationProperties.AutomationId="SldRadius" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding CornerRadius}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            <Button Grid.Row="3" Grid.Column="3" Content="Reset" Command="{Binding ResetAppearanceCommand}" CommandParameter="radius" Margin="0,4" />
+
+                            <TextBlock Grid.Row="4" Text="Font" VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding FontFamilies}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding FontFamily}" AutomationProperties.Name="Font" AutomationProperties.AutomationId="CmbFont" Margin="0,6" />
+
+                            <TextBlock Grid.Row="5" Text="Font size" VerticalAlignment="Center" />
+                            <Slider Grid.Row="5" Grid.Column="1" Minimum="10" Maximum="20" Value="{Binding FontSize}" IsSnapToTickEnabled="True" TickFrequency="0.5"
+                                    AutomationProperties.Name="Font size" AutomationProperties.AutomationId="SldFontSize" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding FontSize}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            <Button Grid.Row="5" Grid.Column="3" Content="Reset" Command="{Binding ResetAppearanceCommand}" CommandParameter="font" Margin="0,4" />
+                        </Grid>
+
+                        <Button Content="Reset all appearance settings" AutomationProperties.AutomationId="BtnResetAppearance" HorizontalAlignment="Left" Margin="0,20,0,0" Command="{Binding ResetAppearanceCommand}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ───────────── Behavior ───────────── -->
+            <TabItem Header="Behavior" AutomationProperties.AutomationId="TabBehavior">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,12,0">
+                    <StackPanel Margin="0,4,0,0" MaxWidth="720" HorizontalAlignment="Left">
+                        <TextBlock Text="Bar" Style="{StaticResource Section}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="320" />
+                                <ColumnDefinition Width="60" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Position" VerticalAlignment="Center" />
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding Edges}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding Edge}" AutomationProperties.Name="Position" AutomationProperties.AutomationId="CmbEdge" Margin="0,6" />
+
+                            <TextBlock Grid.Row="1" Text="Style" VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Modes}" ItemTemplate="{StaticResource OptionWithDescription}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding Mode}" AutomationProperties.Name="Style" AutomationProperties.AutomationId="CmbMode" Margin="0,6" />
+
+                            <TextBlock Grid.Row="2" Text="Size" VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Sizes}" ItemTemplate="{StaticResource OptionWithDescription}"
+                                      SelectedValuePath="Value" SelectedValue="{Binding BarSize}"
+                                      AutomationProperties.Name="Size" AutomationProperties.AutomationId="CmbSize" Margin="0,6" />
+
+                            <TextBlock Grid.Row="3" Text="Gap from edge (pill)" VerticalAlignment="Center" />
+                            <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="32" Value="{Binding BarMargin}" IsSnapToTickEnabled="True" TickFrequency="1"
+                                    IsEnabled="{Binding IsPill}" AutomationProperties.Name="Gap from edge" AutomationProperties.AutomationId="SldMargin" VerticalAlignment="Center" Margin="0,10" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding BarMargin}" VerticalAlignment="Center" Margin="10,0,0,0" />
+
+                            <CheckBox Grid.Row="4" Grid.Column="1" Content="Keep maximized windows clear of the pill" IsChecked="{Binding ReserveSpaceInPill}" AutomationProperties.AutomationId="ChkReserve"
+                                      IsEnabled="{Binding IsPill}" Margin="0,6" />
+
+                            <TextBlock Grid.Row="5" Text="Monitor" VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding Monitor}" AutomationProperties.Name="Monitor" AutomationProperties.AutomationId="CmbMonitor" Margin="0,6" />
+                        </Grid>
+
+                        <TextBlock Text="Windows taskbar" Style="{StaticResource Section}" />
+                        <ComboBox Width="520" HorizontalAlignment="Left" ItemsSource="{Binding TaskbarModes}" ItemTemplate="{StaticResource OptionWithDescription}"
+                                  SelectedValuePath="Value" SelectedValue="{Binding TaskbarMode}" AutomationProperties.Name="Windows taskbar" AutomationProperties.AutomationId="CmbTaskbarMode" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0"
+                                   Text="Tempo always puts the Windows taskbar back when it exits, even after a crash (on the next launch). Emergency: run Tempo.exe --restore-taskbar." />
+
+                        <TextBlock Text="General" Style="{StaticResource Section}" />
+                        <CheckBox Content="Hide Tempo while a full-screen app or game is running" IsChecked="{Binding HideOnFullscreen}" AutomationProperties.AutomationId="ChkFullscreen" Margin="0,4" />
+                        <CheckBox Content="Start Tempo when I sign in to Windows" IsChecked="{Binding StartWithWindows}" AutomationProperties.AutomationId="ChkStartup" Margin="0,4" />
+
+                        <TextBlock Text="Files" Style="{StaticResource Section}" />
+                        <TextBlock Text="{Binding SettingsPath}" Style="{StaticResource Hint}" Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Edit settings file" AutomationProperties.AutomationId="BtnEditFile" Margin="0,0,8,0" Command="{Binding OpenSettingsFileCommand}" />
+                            <Button Content="Show in folder" AutomationProperties.AutomationId="BtnShowFolder" Margin="0,0,8,0" Command="{Binding OpenSettingsFolderCommand}" />
+                            <Button Content="Open log" AutomationProperties.AutomationId="BtnOpenLog" Command="{Binding OpenLogCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

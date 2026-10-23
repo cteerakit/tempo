@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <!-- Read by ThemeService: -->
+    <sys:Boolean x:Key="Theme.IsDark">True</sys:Boolean>
+    <sys:String x:Key="Theme.Backdrop">Acrylic</sys:String>
+    <sys:Double x:Key="Theme.CornerRadius">14</sys:Double>
+    <Color x:Key="Bar.BackgroundColor">#5C141418</Color>
+
+    <SolidColorBrush x:Key="Bar.Background" Color="{StaticResource Bar.BackgroundColor}" />
+    <SolidColorBrush x:Key="Bar.Foreground" Color="#F5FFFFFF" />
+    <SolidColorBrush x:Key="Bar.SubtleForeground" Color="#A6FFFFFF" />
+    <SolidColorBrush x:Key="Bar.Border" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="Widget.HoverBackground" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="Widget.PressedBackground" Color="#12FFFFFF" />
+    <SolidColorBrush x:Key="Accent" Color="#FF8AB4FF" />
+    <SolidColorBrush x:Key="Accent.Foreground" Color="#FF0B1020" />
+    <SolidColorBrush x:Key="Flyout.Background" Color="#F01C1C22" />
+    <SolidColorBrush x:Key="Flyout.Border" Color="#2EFFFFFF" />
+    <FontFamily x:Key="Bar.FontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <sys:Double x:Key="Bar.FontSize">13</sys:Double>
+</ResourceDictionary>
