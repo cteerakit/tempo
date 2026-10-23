@@ -20,7 +20,8 @@ public class IconResourceTests
     public void ExpandsEnvironmentVariables()
     {
         Assert.True(IconResource.TryParse(@"%TEMP%\profile.ico,0", out var icon));
-        Assert.Equal(Path.Combine(Path.GetTempPath().TrimEnd('\\'), "profile.ico"), icon.Path);
+        // %TEMP% can be a short (8.3) path, unlike Path.GetTempPath(), so expect the variable's own value.
+        Assert.Equal(Path.Combine(Environment.GetEnvironmentVariable("TEMP")!, "profile.ico"), icon.Path);
     }
 
     [Theory]
