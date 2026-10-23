@@ -241,6 +241,16 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void OpenLog() => ShellActions.Launch("notepad.exe", $"\"{Path.Combine(Path.GetDirectoryName(SettingsPath)!, "tempo.log")}\"");
 
+    // ───────────── Updates ─────────────
+
+    public UpdateService Updates => _services.Updates;
+
+    [RelayCommand]
+    private Task CheckForUpdates() => Updates.CheckAsync();
+
+    [RelayCommand]
+    private void RestartToUpdate() => ((App)System.Windows.Application.Current).RestartToUpdate();
+
     // ───────────── Plumbing ─────────────
 
     private void OnSettingsChanged()

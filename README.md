@@ -2,6 +2,25 @@
 
 Tempo is a WPF taskbar for Windows 10/11, built with .NET 10. It provides three widget zones, live appearance settings, and full-width or floating layouts.
 
+## Install
+
+Download `Tempo-win-Setup.exe` from the [latest release](https://github.com/cteerakit/tempo/releases/latest) and run it. Tempo installs for the current user in `%LOCALAPPDATA%\Tempo` without administrator rights and starts immediately. Windows SmartScreen may warn that the installer is unrecognized because it isn't code-signed; choose **More info > Run anyway**.
+
+Installed copies update themselves. Tempo checks GitHub Releases 30 seconds after it starts and every 6 hours, and downloads new versions in the background. A downloaded update installs when Tempo exits, or at its next launch if Windows signed out first. To install it right away, choose **Restart to update** from the tray menu or from **Settings > Behavior > Updates**. Uninstall Tempo from **Settings > Apps**; the uninstaller closes Tempo, restores the Windows taskbar, and removes the sign-in startup entry.
+
+## Release an update
+
+Push a version tag:
+
+```powershell
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The `Release` workflow runs the tests, publishes a self-contained build, packs it with [Velopack](https://velopack.io) (installer, full package, and a delta from the previous release), and publishes a GitHub release. Tags must look like `v1.2.3`, and each release needs a higher version than the last. Installed copies find the release on their next check.
+
+Updates are downloaded from this repository's public releases. Builds run from source (`dotnet run`) report that updates are only available in installed copies.
+
 ## Build and run
 
 Install the .NET 10 SDK, then run from this directory:
@@ -41,7 +60,7 @@ Use **Restore Windows taskbar** from Tempo's tray menu. If Tempo is unresponsive
 & .\src\Tempo.App\bin\Debug\net10.0-windows10.0.22621.0\Tempo.exe --restore-taskbar
 ```
 
-The command signals the running instance to exit and restores the native taskbar. After a forced termination, the next launch recovers the saved taskbar state before applying the configured behavior.
+For an installed copy, run `& "$env:LOCALAPPDATA\Tempo\current\Tempo.exe" --restore-taskbar`. The command signals the running instance to exit and restores the native taskbar. After a forced termination, the next launch recovers the saved taskbar state before applying the configured behavior.
 
 ## Verify changes
 

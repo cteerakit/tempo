@@ -20,6 +20,7 @@ internal sealed class AppServices
     public required WidgetRegistry Widgets { get; init; }
     public required BarState Bar { get; init; }
     public required Action OpenSettings { get; init; }
+    public required UpdateService Updates { get; init; }
     public TrayIconService TrayIcons { get; init; } = new();
 }
 

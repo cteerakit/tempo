@@ -11,6 +11,9 @@
     <RootNamespace>Tempo.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Tempo.ico</ApplicationIcon>
+    <!-- Program.Main runs Velopack's install/update hooks before WPF starts. -->
+    <StartupObject>Tempo.App.Program</StartupObject>
+    <!-- Release builds take the version from the git tag (see .github/workflows/release.yml). -->
     <Version>0.1.0</Version>
     <!-- WPF0001: Fluent ThemeMode is marked experimental; it is only used by the settings window. -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
@@ -29,6 +32,7 @@
     <PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
     <PackageReference Include="ManagedShell" Version="0.0.374" />
     <PackageReference Include="NAudio.Wasapi" Version="3.3.0" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
 </Project>

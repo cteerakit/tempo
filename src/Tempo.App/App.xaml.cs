@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,7 +28,10 @@ public partial class App : Application
     private readonly Dictionary<string, BarWindow> _bars = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarIcon? _tray;
     private Settings.SettingsWindow? _settingsWindow;
-    private IDisposable? _taskbarWatch;
+    private IDisposable? _taskbarWatch, _updateWatch;
+    private UpdateService? _updates;
+    private MenuItem? _updateTrayItem;
+    private bool _skipUpdateOnExit;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -39,7 +43,7 @@ public partial class App : Application
         if (e.Args.Contains("--restore-taskbar", StringComparer.OrdinalIgnoreCase))
         {
             Signal(ExitEventName);
-            new TaskbarHider(Path.Combine(DataDirectory, "taskbar-state.json")).Restore();
+            RestoreTaskbar();
             Shutdown();
             return;
         }
@@ -64,6 +68,7 @@ public partial class App : Application
         _taskbar.RecoverFromPreviousRun();
 
         _settings = new SettingsService(Path.Combine(DataDirectory, "settings.json"), Dispatcher);
+        _updates = new UpdateService();
         var registry = new WidgetRegistry();
         BuiltInWidgets.RegisterAll(registry);
         _services = new AppServices
@@ -75,6 +80,7 @@ public partial class App : Application
             Widgets = registry,
             Bar = new BarState(),
             OpenSettings = OpenSettings,
+            Updates = _updates,
         };
 
         ReconcileBars();
@@ -87,6 +93,8 @@ public partial class App : Application
 
         CreateTrayIcon();
         ListenForSignals();
+        _updates.CheckSoon();
+        _updateWatch = _services.Scheduler.Every(UpdateService.CheckInterval, () => _ = _updates.CheckAsync(), runNow: false);
         Log.Info($"Tempo {typeof(App).Assembly.GetName().Version} started.");
     }
 
@@ -119,6 +127,7 @@ public partial class App : Application
                 Widgets = services.Widgets,
                 Bar = new BarState(),
                 OpenSettings = services.OpenSettings,
+                Updates = services.Updates,
                 TrayIcons = services.TrayIcons,
             };
             var window = new BarWindow(barServices, monitor.DeviceName);
@@ -152,6 +161,8 @@ public partial class App : Application
     private void CreateTrayIcon()
     {
         var menu = new ContextMenu { Style = (Style)FindResource("BarContextMenu") };
+        _updateTrayItem = TrayItem("Restart to update", "", RestartToUpdate);
+        menu.Items.Add(_updateTrayItem);
         menu.Items.Add(TrayItem("Customize Tempo…", "\uE713", OpenSettings));
         menu.Items.Add(TrayItem("Restore Windows taskbar", "\uE7F4", () =>
             _settings!.Update(s => s.Behavior.TaskbarMode = Core.Settings.TaskbarMode.None)));
@@ -166,8 +177,24 @@ public partial class App : Application
             NoLeftClickDelay = true,
         };
         _tray.TrayLeftMouseUp += (_, _) => OpenSettings();
+        _updates!.PropertyChanged += OnUpdatesChanged;
+        OnUpdatesChanged(null, new PropertyChangedEventArgs(null));
         // Efficiency mode would throttle the bar's UI thread, so it stays off.
         _tray.ForceCreate(enablesEfficiencyMode: false);
+    }
+
+    private void OnUpdatesChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var ready = _updates!.Pending;
+        _updateTrayItem!.Visibility = ready is null ? Visibility.Collapsed : Visibility.Visible;
+        _updateTrayItem.Header = ready is null ? "Restart to update" : $"Restart to update to {ready.Version}";
+        _tray!.ToolTipText = ready is null ? "Tempo" : $"Tempo — update {ready.Version} ready";
+    }
+
+    internal void RestartToUpdate()
+    {
+        _updates?.ApplyAfterExit(restart: true);
+        Shutdown();
     }
 
     private MenuItem TrayItem(string header, string glyph, Action action)
@@ -185,6 +212,9 @@ public partial class App : Application
             while (true)
             {
                 var which = WaitHandle.WaitAny(signals);
+                // Exit requests come from --restore-taskbar or the uninstaller, so no update is installed.
+                if (which == 1)
+                    _skipUpdateOnExit = true;
                 Dispatcher.BeginInvoke(which == 0 ? OpenSettings : Shutdown);
                 if (which == 1)
                     return;
@@ -192,6 +222,25 @@ public partial class App : Application
         })
         { IsBackground = true, Name = "Tempo signal listener" };
         thread.Start();
+    }
+
+    private static void RestoreTaskbar() => new TaskbarHider(Path.Combine(DataDirectory, "taskbar-state.json")).Restore();
+
+    /// <summary>Runs in a short-lived process launched by the uninstaller: stop Tempo and undo its changes to Windows.</summary>
+    internal static void PrepareForUninstall()
+    {
+        Signal(ExitEventName);
+        try
+        {
+            using var instance = new Mutex(false, MutexName);
+            if (instance.WaitOne(TimeSpan.FromSeconds(10)))
+                instance.ReleaseMutex();
+        }
+        catch (AbandonedMutexException)
+        {
+        }
+        RestoreTaskbar();
+        StartupRegistration.Sync(false);
     }
 
     private static void Signal(string name)
@@ -223,12 +272,18 @@ public partial class App : Application
             Log.Error("Unobserved task exception", args.Exception);
             args.SetObserved();
         };
-        SessionEnding += (_, _) => _taskbar?.Restore();
+        SessionEnding += (_, _) =>
+        {
+            // Too late to start the updater; a downloaded update installs at the next launch instead.
+            _skipUpdateOnExit = true;
+            _taskbar?.Restore();
+        };
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _taskbarWatch?.Dispose();
+        _updateWatch?.Dispose();
         _settingsWindow?.Close();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         if (_settings is not null)
@@ -240,6 +295,8 @@ public partial class App : Application
         _tray?.Dispose();
         _settings?.Dispose();
         _taskbar?.Restore();
+        if (!_skipUpdateOnExit)
+            _updates?.ApplyAfterExit(restart: false);
         if (_instanceMutex is not null)
         {
             _instanceMutex.Dispose();

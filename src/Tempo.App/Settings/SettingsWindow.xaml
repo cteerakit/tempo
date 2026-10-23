@@ -12,6 +12,7 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <Style x:Key="Section" TargetType="TextBlock">
             <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -311,6 +312,19 @@
                         <TextBlock Text="General" Style="{StaticResource Section}" />
                         <CheckBox Content="Hide Tempo while a full-screen app or game is running" IsChecked="{Binding HideOnFullscreen}" AutomationProperties.AutomationId="ChkFullscreen" Margin="0,4" />
                         <CheckBox Content="Start Tempo when I sign in to Windows" IsChecked="{Binding StartWithWindows}" AutomationProperties.AutomationId="ChkStartup" Margin="0,4" />
+
+                        <TextBlock Text="Updates" Style="{StaticResource Section}" />
+                        <TextBlock Margin="0,0,0,4">
+                            <Run Text="Version" />
+                            <Run Text="{Binding Updates.Version, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding Updates.Status}" Style="{StaticResource Hint}" Margin="0,0,0,8" AutomationProperties.AutomationId="TxtUpdateStatus" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Check for updates" AutomationProperties.AutomationId="BtnCheckUpdates" Margin="0,0,8,0" Command="{Binding CheckForUpdatesCommand}"
+                                    IsEnabled="{Binding Updates.IsInstalled, Mode=OneWay}" />
+                            <Button Content="Restart to update" AutomationProperties.AutomationId="BtnRestartToUpdate" Command="{Binding RestartToUpdateCommand}"
+                                    Visibility="{Binding Updates.IsUpdateReady, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
 
                         <TextBlock Text="Files" Style="{StaticResource Section}" />
                         <TextBlock Text="{Binding SettingsPath}" Style="{StaticResource Hint}" Margin="0,0,0,8" />
