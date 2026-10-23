@@ -104,6 +104,9 @@ internal sealed class WindowTracker : IDisposable
         }
 
         var (exe, processAumid) = GetProcessInfo(pid);
+        var launcher = AppLauncher.ResolveExecutable(exe);
+        if (launcher != exe && File.Exists(launcher))
+            exe = launcher;
         var windowAumid = GetWindowAumid(hwnd);
         return (exe, AppGrouping.ResolveAumid(windowAumid ?? processAumid, exe), processAumid is not null);
     }
@@ -347,17 +350,20 @@ internal static class PinnedApps
             var (exe, arguments, aumid) = ReadShortcut(target);
             return new PinnedApp(target, Path.GetFileNameWithoutExtension(target), target, exe, aumid, arguments);
         }
-        var name = Path.GetFileNameWithoutExtension(target);
+        var launchTarget = AppLauncher.ResolveExecutable(target)!;
+        if (!File.Exists(launchTarget))
+            launchTarget = target;
+        var name = Path.GetFileNameWithoutExtension(launchTarget);
         try
         {
-            var description = System.Diagnostics.FileVersionInfo.GetVersionInfo(target).FileDescription;
+            var description = System.Diagnostics.FileVersionInfo.GetVersionInfo(launchTarget).FileDescription;
             if (!string.IsNullOrWhiteSpace(description))
                 name = description;
         }
         catch (FileNotFoundException)
         {
         }
-        return new PinnedApp(target, name, target, target, null);
+        return new PinnedApp(target, name, launchTarget, launchTarget, null);
     }
 
     private static (string? Target, string? Arguments, string? Aumid) ReadShortcut(string path)
