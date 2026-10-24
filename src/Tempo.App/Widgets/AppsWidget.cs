@@ -230,7 +230,7 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
             entry.IsWindowListOpen = false;
             entry.IsPreviewOpen = false;
         }
-        ToggleWindow(window);
+        ShellActions.Activate(window.Hwnd);
     }
 
     [RelayCommand]

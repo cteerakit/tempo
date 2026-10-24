@@ -110,6 +110,24 @@ public static class Input
     }
 }
 
+/// <summary>
+/// Horizontal popup offset that centres a flyout panel on its placement target. Top/Bottom placement aligns the popup
+/// window's left edge to the target's, so the offset is half the width difference, less the panel's shadow margin
+/// (the converter parameter) that sits inside the popup window.
+/// </summary>
+public sealed class CenterOnTargetConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values is not [double target, double panel] || double.IsNaN(target) || double.IsNaN(panel))
+            return 0d;
+        var margin = parameter is null ? 0 : System.Convert.ToDouble(parameter, CultureInfo.InvariantCulture);
+        return (target - panel) / 2 - margin;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 /// <summary>Width of a slider's filled track: (value − min) / (max − min) of the usable width.</summary>
 public sealed class SliderFillConverter : IMultiValueConverter
 {

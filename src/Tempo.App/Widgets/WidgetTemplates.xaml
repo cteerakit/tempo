@@ -118,7 +118,13 @@
                         <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=AppButton}"
                                Placement="{Binding Owner.Bar.FlyoutPlacement}" VerticalOffset="{Binding Owner.Bar.FlyoutOffset}"
                                IsOpen="{Binding IsPreviewOpen}">
-                            <Border Style="{StaticResource FlyoutPanel}" Padding="6"
+                            <Popup.HorizontalOffset>
+                                <MultiBinding Converter="{StaticResource CenterOnTarget}" ConverterParameter="14">
+                                    <Binding ElementName="AppButton" Path="ActualWidth" />
+                                    <Binding ElementName="PreviewPanel" Path="ActualWidth" />
+                                </MultiBinding>
+                            </Popup.HorizontalOffset>
+                            <Border x:Name="PreviewPanel" Style="{StaticResource FlyoutPanel}" Padding="6"
                                     MouseEnter="AppHover_Enter" MouseLeave="AppHover_Leave">
                                 <ItemsControl ItemsSource="{Binding Windows}">
                                     <ItemsControl.ItemsPanel>
@@ -142,7 +148,7 @@
                                                         <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality" />
                                                         <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                                     </DockPanel>
-                                                    <c:DwmThumbnail Source="{Binding Hwnd}" HorizontalAlignment="Left" />
+                                                    <c:DwmThumbnail Source="{Binding Hwnd}" HorizontalAlignment="Center" />
                                                 </StackPanel>
                                             </Button>
                                             <DataTemplate.Triggers>

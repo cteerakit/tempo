@@ -297,21 +297,10 @@ internal partial class BarWindow : Window
             var options = new MenuItem { Header = $"{descriptor.DisplayName} options...", Tag = _widgetMenuMarker };
             options.Click += (_, _) => OpenWidgetOptions(id, descriptor);
             menu.Items.Insert(0, options);
-            var position = 1;
-            foreach (var zone in Enum.GetValues<WidgetZone>())
-            {
-                var target = zone;
-                var move = new MenuItem { Header = $"Move to {zone.ToString().ToLowerInvariant()}", IsEnabled = !Settings.Bar.IsLocked, Tag = _widgetMenuMarker };
-                move.Click += (_, _) => _services.Settings.Update(s =>
-                {
-                    if (!s.Bar.IsLocked) s.Layout.Move(id, target, int.MaxValue);
-                });
-                menu.Items.Insert(position++, move);
-            }
             var remove = new MenuItem { Header = "Remove widget", Tag = _widgetMenuMarker };
             remove.Click += (_, _) => _services.Settings.Update(s => s.Layout.Remove(id));
-            menu.Items.Insert(position++, remove);
-            menu.Items.Insert(position, new Separator { Tag = _widgetMenuMarker });
+            menu.Items.Insert(1, remove);
+            menu.Items.Insert(2, new Separator { Tag = _widgetMenuMarker });
         }
 
         if (menu == Root.ContextMenu)

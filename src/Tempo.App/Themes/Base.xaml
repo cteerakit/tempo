@@ -8,6 +8,7 @@
     <c:TruthyToVisibilityConverter x:Key="ShowIf" />
     <c:TruthyToVisibilityConverter x:Key="HideIf" Invert="True" />
     <c:PercentToLengthConverter x:Key="PercentToLength" />
+    <c:CenterOnTargetConverter x:Key="CenterOnTarget" />
 
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
