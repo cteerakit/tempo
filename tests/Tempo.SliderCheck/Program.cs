@@ -16,6 +16,7 @@ internal static partial class Program
         var app = new CheckApp { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Tempo;component/Themes/Base.xaml") });
         var assembly = Assembly.Load("Tempo");
+        if (args.Contains("--app-jump-list")) return CheckAppJumpList(assembly);
         if (args.Contains("--native-apps")) return CheckNativeApps(assembly);
         if (args.Contains("--pwa-icons"))
         {

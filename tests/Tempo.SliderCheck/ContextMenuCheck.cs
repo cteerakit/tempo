@@ -4,6 +4,39 @@ using Tempo.App.Controls;
 
 internal static partial class Program
 {
+    private static int CheckAppJumpList(System.Reflection.Assembly assembly)
+    {
+        var pins = assembly.GetType("Tempo.App.Shell.PinnedApps", true)!;
+        var reader = assembly.GetType("Tempo.App.Shell.AppJumpList", true)!.GetMethod("Read")!;
+        var resolve = reader.DeclaringType!.GetMethod("ResolveAppId")!;
+        var entries = (System.Collections.IEnumerable)pins.GetMethod("LoadTaskbarPins")!.Invoke(null, null)!;
+        var actionCount = 0;
+        foreach (var pin in entries)
+        {
+            var id = pin.GetType().GetProperty("Aumid")!.GetValue(pin) as string;
+            id ??= resolve.Invoke(null, [pin.GetType().GetProperty("LaunchPath")!.GetValue(pin)]) as string;
+            if (id is null) continue;
+            var groups = (System.Collections.IEnumerable)reader.Invoke(null, [id])!;
+            foreach (var group in groups)
+            {
+                var actions = (System.Collections.IEnumerable)group.GetType().GetProperty("Actions")!.GetValue(group)!;
+                var groupCount = 0;
+                foreach (var action in actions)
+                {
+                    var name = action.GetType().GetProperty("Name")!.GetValue(action) as string;
+                    if (string.IsNullOrWhiteSpace(name)) return 1;
+                    var target = (string)action.GetType().GetProperty("Target")!.GetValue(action)!;
+                    if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) && !System.IO.File.Exists(target)) return 1;
+                    actionCount++;
+                    groupCount++;
+                }
+                Console.WriteLine($"{id}: {group.GetType().GetProperty("Name")!.GetValue(group)} ({groupCount} actions)");
+            }
+        }
+        Console.WriteLine($"Read {actionCount} live Jump List actions.");
+        return actionCount > 0 ? 0 : 1;
+    }
+
     private static int CheckBarContextMenu(Application app, System.Reflection.Assembly assembly, object services)
     {
         var bar = (Window)Activator.CreateInstance(assembly.GetType("Tempo.App.Bar.BarWindow", true)!, [services])!;
@@ -34,7 +67,9 @@ internal static partial class Program
             Console.WriteLine($"App menu opening {attempt + 1}: {string.Join(", ", headers)}");
             if (headers.Count(header => header == "Open") != 1 ||
                 headers.Count(header => header == "Customize Tempo\u2026") != 1 ||
-                headers.Count(header => header == "Exit Tempo") != 1)
+                headers.Count(header => header == "Exit Tempo") != 1 ||
+                menu.Items.OfType<Separator>().Count() != 2 ||
+                menu.Items[0] is Separator || menu.Items[^1] is Separator)
                 return 1;
         }
         bar.Close();

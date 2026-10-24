@@ -266,10 +266,12 @@ internal partial class BarWindow : Window
         TaskbarMenuItem.Visibility = Settings.Behavior.TaskbarMode == TaskbarMode.None ? Visibility.Collapsed : Visibility.Visible;
 
         var menu = Root.ContextMenu;
+        var isAppMenu = false;
         for (var element = e.OriginalSource as DependencyObject; element is not null; element = VisualTreeHelper.GetParent(element))
             if (element is FrameworkElement { ContextMenu: { } foundMenu })
             {
                 menu = foundMenu;
+                isAppMenu = element is FrameworkElement { DataContext: AppEntry };
                 break;
             }
         if (menu is null)
@@ -288,7 +290,7 @@ internal partial class BarWindow : Window
                 break;
             }
 
-        if (widget is not null && Settings.Layout.Find(widget.InstanceId) is { } instance &&
+        if (!isAppMenu && widget is not null && Settings.Layout.Find(widget.InstanceId) is { } instance &&
             _services.Widgets.Find(instance.TypeId) is { } descriptor)
         {
             var id = widget.InstanceId;

@@ -194,14 +194,26 @@ public partial class WidgetTemplates : ResourceDictionary
         var apps = entry.Owner;
         menu.Items.Clear();
         menu.Items.Add(Item(entry.IsRunning ? "New window" : "Open", "\uE8A7", apps.LaunchCommand, entry, entry.LaunchTarget is not null));
-        menu.Items.Add(new Separator());
+        var appId = entry.Pin?.Aumid ?? (entry.Key.StartsWith("aumid:", StringComparison.Ordinal) ? entry.Key[6..] : null);
+        appId ??= Shell.AppJumpList.ResolveAppId(entry.LaunchTarget);
+        foreach (var group in Shell.AppJumpList.Read(appId))
+        {
+            var parent = group.IsTasks ? null : new MenuItem { Header = group.Name };
+            foreach (var action in group.Actions)
+            {
+                var item = new MenuItem { Header = new TextBlock { Text = action.Name } };
+                item.Click += (_, _) => Shell.ShellActions.Launch(action.Target);
+                if (parent is null) menu.Items.Add(item);
+                else parent.Items.Add(item);
+            }
+            if (parent is not null) menu.Items.Add(parent);
+        }
         if (entry.IsPinned)
             menu.Items.Add(Item("Unpin from Tempo", "\uE77A", apps.UnpinCommand, entry));
         else
             menu.Items.Add(Item("Pin to Tempo", "\uE718", apps.PinToTempoCommand, entry, entry.PinTarget is not null));
         if (entry.IsRunning)
         {
-            menu.Items.Add(new Separator());
             menu.Items.Add(Item(entry.Windows.Count > 1 ? "Close all windows" : "Close window", "\uE711", apps.CloseAllCommand, entry));
         }
     }
