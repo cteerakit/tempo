@@ -94,6 +94,7 @@
                                 ToolTip="{Binding ToolTip}"
                                 Command="{Binding Owner.ClickCommand}" CommandParameter="{Binding}"
                                 c:Input.MiddleClickCommand="{Binding Owner.LaunchCommand}" c:Input.MiddleClickParameter="{Binding}"
+                                MouseEnter="AppHover_Enter" MouseLeave="AppHover_Leave"
                                 ContextMenuOpening="AppButton_ContextMenuOpening">
                             <Button.ContextMenu>
                                 <ContextMenu />
@@ -112,6 +113,48 @@
                                 VerticalAlignment="Bottom" HorizontalAlignment="Center" IsHitTestVisible="False"
                                 Background="{DynamicResource Bar.SubtleForeground}"
                                 Visibility="{Binding IsRunning, Converter={StaticResource ShowIf}}" />
+
+                        <!-- Hover preview: live DWM thumbnails of the app's windows, like the Windows taskbar. -->
+                        <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=AppButton}"
+                               Placement="{Binding Owner.Bar.FlyoutPlacement}" VerticalOffset="{Binding Owner.Bar.FlyoutOffset}"
+                               IsOpen="{Binding IsPreviewOpen}">
+                            <Border Style="{StaticResource FlyoutPanel}" Padding="6"
+                                    MouseEnter="AppHover_Enter" MouseLeave="AppHover_Leave">
+                                <ItemsControl ItemsSource="{Binding Windows}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type w:AppWindowItem}">
+                                            <Button x:Name="PreviewButton" Style="{StaticResource FlyoutButton}" Padding="8" Margin="2,0"
+                                                    HorizontalContentAlignment="Left"
+                                                    Command="{Binding DataContext.Owner.ActivateWindowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel>
+                                                    <DockPanel Margin="2,0,0,8" MaxWidth="220">
+                                                        <Button DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Padding="6,4" Margin="8,0,0,0" ToolTip="Close window"
+                                                                Command="{Binding DataContext.Owner.CloseWindowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <TextBlock Style="{StaticResource Icon}" FontSize="10" Text="&#xE711;" />
+                                                        </Button>
+                                                        <Image DockPanel.Dock="Left" Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                    <c:DwmThumbnail Source="{Binding Hwnd}" HorizontalAlignment="Left" />
+                                                </StackPanel>
+                                            </Button>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter TargetName="PreviewButton" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </Popup>
 
                         <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=AppButton}"
                                Placement="{Binding Owner.Bar.FlyoutPlacement}" VerticalOffset="{Binding Owner.Bar.FlyoutOffset}"
@@ -188,6 +231,10 @@
                         <DataTrigger Binding="{Binding IsFlashing}" Value="True">
                             <Setter TargetName="Indicator" Property="Background" Value="#FFF59E0B" />
                             <Setter TargetName="AppButton" Property="Background" Value="#40F59E0B" />
+                        </DataTrigger>
+                        <!-- The hover preview shows the titles, so the plain tooltip would just double up. -->
+                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                            <Setter TargetName="AppButton" Property="ToolTipService.IsEnabled" Value="False" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsDragging}" Value="True">
                             <Setter TargetName="AppButton" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
@@ -399,13 +446,6 @@
                                 <TextBlock Style="{StaticResource Icon}" FontSize="15" Text="&#xE893;" />
                             </Button>
                         </StackPanel>
-                        <Button Style="{StaticResource FlyoutButton}" Margin="0,10,0,0" Command="{Binding OpenSourceAppCommand}"
-                                Visibility="{Binding SourceApp, Converter={StaticResource ShowIf}}">
-                            <DockPanel>
-                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE8A7;" Margin="0,0,10,0" />
-                                <TextBlock Text="Open player" />
-                            </DockPanel>
-                        </Button>
                     </StackPanel>
                 </Border>
             </Popup>

@@ -57,9 +57,6 @@ internal sealed partial class MediaWidget(WidgetContext context, MediaSettings s
     [NotifyPropertyChangedFor(nameof(PlayPauseGlyph))]
     public partial bool IsPlaying { get; set; }
 
-    [ObservableProperty]
-    public partial string SourceApp { get; set; } = "";
-
     public string PlayPauseGlyph => IsPlaying ? "\uE769" : "\uE768";
 
     public string Summary => string.IsNullOrEmpty(Artist) ? Title : $"{Title} · {Artist}";
@@ -110,14 +107,6 @@ internal sealed partial class MediaWidget(WidgetContext context, MediaSettings s
     [RelayCommand]
     private Task Previous() => Run(s => s.TrySkipPreviousAsync().AsTask());
 
-    [RelayCommand]
-    private void OpenSourceApp()
-    {
-        IsFlyoutOpen = false;
-        if (_session?.SourceAppUserModelId is { Length: > 0 } aumid)
-            ShellActions.Launch($@"shell:AppsFolder\{aumid}");
-    }
-
     private void OnCurrentSessionChanged(SessionManager sender, CurrentSessionChangedEventArgs args) =>
         OnUi(() => AttachSession(sender.GetCurrentSession()));
 
@@ -133,13 +122,12 @@ internal sealed partial class MediaWidget(WidgetContext context, MediaSettings s
         HasSession = session is not null;
         if (session is null)
         {
-            (Title, Artist, Artwork, IsPlaying, SourceApp) = ("", "", null, false, "");
+            (Title, Artist, Artwork, IsPlaying) = ("", "", null, false);
             return;
         }
 
         session.MediaPropertiesChanged += OnMediaPropertiesChanged;
         session.PlaybackInfoChanged += OnPlaybackInfoChanged;
-        SourceApp = session.SourceAppUserModelId ?? "";
         UpdatePlayback(session);
         _ = UpdateMediaPropertiesAsync(session);
     }

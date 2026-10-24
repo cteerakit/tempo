@@ -185,12 +185,79 @@ public partial class WidgetTemplates : ResourceDictionary
         _dragging = false;
     }
 
+    // ───────────── Apps: hover preview ─────────────
+    // Opens after a short hover, stays open while the pointer is over the button or the preview, and
+    // switches instantly between buttons once open (like the Windows taskbar).
+
+    private static readonly TimeSpan PreviewOpenDelay = TimeSpan.FromMilliseconds(400);
+    private static readonly TimeSpan PreviewCloseDelay = TimeSpan.FromMilliseconds(200);
+
+    private System.Windows.Threading.DispatcherTimer? _previewTimer;
+    private AppEntry? _hoverEntry;
+    private AppEntry? _previewEntry;
+
+    private void AppHover_Enter(object sender, MouseEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is not AppEntry entry)
+            return;
+        _hoverEntry = entry;
+        if (_previewEntry is not null && _previewEntry != entry)
+        {
+            _previewEntry.IsPreviewOpen = false;
+            _previewEntry = null;
+            ApplyHover();
+        }
+        else if (_previewEntry == entry)
+            _previewTimer?.Stop();
+        else
+            StartPreviewTimer(PreviewOpenDelay);
+    }
+
+    private void AppHover_Leave(object sender, MouseEventArgs e)
+    {
+        _hoverEntry = null;
+        StartPreviewTimer(PreviewCloseDelay);
+    }
+
+    private void StartPreviewTimer(TimeSpan delay)
+    {
+        _previewTimer ??= new System.Windows.Threading.DispatcherTimer();
+        _previewTimer.Stop();
+        _previewTimer.Interval = delay;
+        _previewTimer.Tick -= PreviewTimer_Tick;
+        _previewTimer.Tick += PreviewTimer_Tick;
+        _previewTimer.Start();
+    }
+
+    private void PreviewTimer_Tick(object? sender, EventArgs e)
+    {
+        _previewTimer?.Stop();
+        ApplyHover();
+    }
+
+    private void ApplyHover()
+    {
+        if (_hoverEntry is { } entry)
+        {
+            if (entry.Windows.Count == 0 || entry.IsWindowListOpen || entry.IsDragging || Mouse.LeftButton == MouseButtonState.Pressed)
+                return;
+            entry.IsPreviewOpen = true;
+            _previewEntry = entry;
+        }
+        else if (_previewEntry is { } open)
+        {
+            open.IsPreviewOpen = false;
+            _previewEntry = null;
+        }
+    }
+
     /// <summary>The app context menu depends on pin and window state, so it's built when opened.</summary>
     private void AppButton_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: AppEntry entry, ContextMenu: { } menu })
             return;
 
+        entry.IsPreviewOpen = false;
         var apps = entry.Owner;
         menu.Items.Clear();
         menu.Items.Add(Item(entry.IsRunning ? "New window" : "Open", "\uE8A7", apps.LaunchCommand, entry, entry.LaunchTarget is not null));

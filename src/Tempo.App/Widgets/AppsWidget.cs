@@ -87,6 +87,10 @@ internal sealed partial class AppEntry(string key, AppsWidget owner) : Observabl
     [ObservableProperty]
     public partial bool IsWindowListOpen { get; set; }
 
+    /// <summary>True while the hover preview (live window thumbnails) is showing.</summary>
+    [ObservableProperty]
+    public partial bool IsPreviewOpen { get; set; }
+
     /// <summary>True while this button is being dragged to a new position.</summary>
     [ObservableProperty]
     public partial bool IsDragging { get; set; }
@@ -94,7 +98,10 @@ internal sealed partial class AppEntry(string key, AppsWidget owner) : Observabl
     partial void OnIsWindowListOpenChanged(bool value)
     {
         if (value)
+        {
+            IsPreviewOpen = false;
             Services.OutsideClickWatcher.RegisterFlyout(this, () => IsWindowListOpen = false);
+        }
         else
             Services.OutsideClickWatcher.Unregister(this);
     }
@@ -193,6 +200,7 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
     [RelayCommand]
     private void Click(AppEntry entry)
     {
+        entry.IsPreviewOpen = false;
         switch (entry.Windows.Count)
         {
             case 0:
@@ -218,7 +226,10 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
     private void ActivateWindow(AppWindowItem window)
     {
         foreach (var entry in Entries)
+        {
             entry.IsWindowListOpen = false;
+            entry.IsPreviewOpen = false;
+        }
         ToggleWindow(window);
     }
 
@@ -281,7 +292,10 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
     public void BeginReorder(AppEntry entry)
     {
         foreach (var e in Entries)
+        {
             e.IsWindowListOpen = false;
+            e.IsPreviewOpen = false;
+        }
         _dragged = entry;
         _dragSetId = Services.Settings.Current.PinSets.ActiveId;
         entry.IsDragging = true;
@@ -455,6 +469,8 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
 
         if (entry.Windows.Count < 2)
             entry.IsWindowListOpen = false;
+        if (entry.Windows.Count == 0)
+            entry.IsPreviewOpen = false;
 
         entry.ToolTip = windows.Count switch
         {

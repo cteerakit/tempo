@@ -45,6 +45,18 @@ internal struct MONITORINFOEX
 }
 
 [StructLayout(LayoutKind.Sequential)]
+internal struct DWM_THUMBNAIL_PROPERTIES
+{
+    public const int RectDestination = 0x1, Opacity = 0x4, Visible = 0x8, SourceClientAreaOnly = 0x10;
+
+    public int Flags;
+    public RECT Destination, Source;
+    public byte Alpha;
+    public int IsVisible;
+    public int ClientAreaOnly;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 internal struct MARGINS
 {
     public int Left, Right, Top, Bottom;
@@ -424,6 +436,18 @@ internal static class NativeMethods
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmExtendFrameIntoClientArea(nint hwnd, ref MARGINS margins);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmRegisterThumbnail(nint destination, nint source, out nint thumbnail);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmUnregisterThumbnail(nint thumbnail);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmUpdateThumbnailProperties(nint thumbnail, ref DWM_THUMBNAIL_PROPERTIES properties);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmQueryThumbnailSourceSize(nint thumbnail, out SIZE size);
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmEnableBlurBehindWindow(nint hwnd, ref DWM_BLURBEHIND blur);

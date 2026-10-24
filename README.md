@@ -40,6 +40,8 @@ To build while Tempo is running, use a separate output directory:
 dotnet build Tempo.sln -p:OutputPath=bin/Verify/
 ```
 
+To iterate without rebuilding and relaunching by hand, run `pwsh tools/dev.ps1`. It closes any running Tempo and starts the app under `dotnet watch`: C# edits apply live where Hot Reload supports them, and other edits (including XAML) restart the app automatically. Press Ctrl+C to stop; the script then restores the Windows taskbar. For live XAML Hot Reload without a restart, press F5 in Visual Studio instead.
+
 Use **Appearance > Blur strength** to blend from a clear background at 0% to full glass blur at 100%, independently of tint opacity. Changes apply while dragging, work in pill and full-width layouts, and are saved. **Reset** restores 100%; the slider is disabled when the backdrop is **None**. Run `dotnet run --project tests/Tempo.SliderCheck -- --blur-strength` to check continuous dragging and saved values with temporary settings.
 
 ## Pomodoro timer
