@@ -50,9 +50,9 @@ Add **Pomodoro** from **Layout > Essentials**. Click the countdown to start, pau
 
 ## Pinned app sets
 
-Add **Pinned app sets** from **Layout > Essentials**. Manage sets in **Settings > Pinned apps** to create an empty set or rename the selected set. Click the widget to switch sets; choosing a set closes the flyout. Right-click a running app and choose **Pin to Tempo** to add it to the active set; unpinning and dragging to reorder also affect only that set. Existing pins and Windows taskbar pins remain in **Default**. New sets contain only apps pinned in Tempo. Open windows stay visible in every set. Selection is shared across monitors and Apps widgets, while each Apps widget keeps its own pins and order. Sets and the selected set are saved across restarts.
+Add **Pinned app sets** from **Layout > Essentials**. Manage sets in **Settings > Pinned apps** to create an empty set or rename the selected set. With two sets, click the widget to switch between them; with three or more, it opens a selector, and choosing a set closes it. Right-click a running app and choose **Pin to Tempo** to add it to the active set; unpinning and dragging to reorder also affect only that set. Existing pins and Windows taskbar pins remain in **Default**. New sets contain only apps pinned in Tempo. Open windows stay visible in every set. Selection is shared across monitors and Apps widgets, while each Apps widget keeps its own pins and order. Sets and the selected set are saved across restarts.
 
-Run `dotnet run --project tests/Tempo.SliderCheck -- --pin-sets` to verify the real switcher flyout, creation, renaming, duplicate names, pin/order isolation, and persistence with temporary settings.
+Run `dotnet run --project tests/Tempo.SliderCheck -- --pin-sets` to verify the real switcher and selector, creation, renaming, duplicate names, pin/order isolation, and persistence with temporary settings.
 
 ## Restore the Windows taskbar
 

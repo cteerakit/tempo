@@ -41,7 +41,8 @@ internal static partial class Program
             switchButton.Command.Execute(null);
             Pump();
             Require(current.PinSets.ActiveId == initialId, "Cycling a single set changed the active set.");
-            Require(!Descendants<Popup>(host).Any(), "Switcher still contains a popup.");
+            var selector = Descendants<Popup>(host).Single();
+            Require(!selector.IsOpen, "A single set opened the selector.");
             type.GetProperty("SetName")!.SetValue(management, "Work");
             Command("Create");
             Pump();
@@ -105,7 +106,28 @@ internal static partial class Program
             var back = SettingsSerializer.Deserialize(SettingsSerializer.Serialize(current));
             Require(back.PinSets.ActiveId == workId && back.PinSets.Sets.Last().Name == "Office", "Catalog did not survive serialization.");
             Require(back.PinSets.Sets.Last().Icon == "\uE821" && !back.PinSets.Sets.Last().IconOnly, "Icon settings did not survive serialization.");
-            Console.WriteLine("PASS: settings page editing, click to cycle, wraparound, single-set behavior, create, rename, duplicate validation, isolated pins/order, persistence.");
+            Require(!selector.IsOpen, "Two sets opened the selector.");
+            type.GetProperty("SetName")!.SetValue(management, "Home");
+            Command("Create");
+            Pump();
+            var homeId = current.PinSets.ActiveId;
+            switchButton.Command.Execute(null);
+            Pump();
+            Require(selector.IsOpen && current.PinSets.ActiveId == homeId, "Three sets must open the selector without switching.");
+            switchButton.Command.Execute(null);
+            Pump();
+            Require(!selector.IsOpen && current.PinSets.ActiveId == homeId, "Clicking again must close the selector without switching.");
+            switchButton.Command.Execute(null);
+            Pump();
+            var rows = Descendants<Button>(selector.Child).ToList();
+            Require(rows.Count == 3, "Selector must list every set.");
+            Require(rows.Select(System.Windows.Automation.AutomationProperties.GetName).SequenceEqual(current.PinSets.Sets.Select(s => s.Name)), "Selector rows do not match the sets.");
+            Require(Descendants<TextBlock>(rows[2]).Single(t => t.Text == "\uE73E").IsVisible && !Descendants<TextBlock>(rows[0]).Single(t => t.Text == "\uE73E").IsVisible, "Selector must mark only the active set.");
+            rows[0].Command.Execute(rows[0].CommandParameter);
+            Pump();
+            Require(current.PinSets.ActiveId == initialId && !selector.IsOpen, "Choosing a set must switch to it and close the selector.");
+            Require(List("Pins").SequenceEqual(["default.exe"]), "Selector did not switch the pins.");
+            Console.WriteLine("PASS: settings page editing, click to cycle, wraparound, single-set behavior, three-set selector, create, rename, duplicate validation, isolated pins/order, persistence.");
             return 0;
         }
         finally

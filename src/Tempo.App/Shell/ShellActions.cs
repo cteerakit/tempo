@@ -20,6 +20,8 @@ internal static class ShellActions
 
     public static void OpenSoundSettings() => Launch("ms-settings:sound");
 
+    public static void OpenTaskManager() => Launch("taskmgr.exe");
+
     public static void Launch(string target, string? arguments = null)
     {
         try

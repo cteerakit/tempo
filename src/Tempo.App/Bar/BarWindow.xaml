@@ -52,6 +52,7 @@
                     <MenuItem Header="Customize Tempo&#x2026;" Tag="&#xE713;" Click="Customize_Click" />
                     <MenuItem x:Name="LockBarMenuItem" Header="Lock bar" Tag="&#xE72E;" Click="ToggleBarLock_Click" />
                     <MenuItem x:Name="TaskbarMenuItem" Header="Show Windows taskbar" Tag="&#xE7F4;" Click="ToggleTaskbar_Click" />
+                    <MenuItem Header="Task Manager" Tag="&#xE9D9;" Click="TaskManager_Click" />
                     <Separator />
                     <MenuItem Header="Exit Tempo" Tag="&#xE7E8;" Click="Exit_Click" />
                 </ContextMenu>

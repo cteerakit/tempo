@@ -45,24 +45,61 @@
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type w:PinSetSwitcherWidget}">
-        <Button Style="{StaticResource WidgetButton}"
-                      Command="{Binding CycleSetCommand}" ToolTip="{Binding ActiveName}"
-                      AutomationProperties.Name="{Binding ActiveName}">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Style="{StaticResource Icon}" Text="{Binding ActiveIcon}" />
-                <TextBlock Text="{Binding ActiveName}" VerticalAlignment="Center" Margin="7,0,0,0">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ShowText}" Value="False">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </StackPanel>
-        </Button>
+        <Grid>
+            <!-- A plain button, not a ToggleButton: with two sets a click switches directly and opens nothing. -->
+            <Button x:Name="SwitchButton" Command="{Binding ClickCommand}" ToolTip="{Binding ActiveName}"
+                    AutomationProperties.Name="{Binding ActiveName}">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource WidgetButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFlyoutOpen}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="{Binding ActiveIcon}" />
+                    <TextBlock Text="{Binding ActiveName}" VerticalAlignment="Center" Margin="7,0,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowText}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Button>
+            <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=SwitchButton}" IsOpen="{Binding IsFlyoutOpen}">
+                <Border Style="{StaticResource FlyoutPanel}" Padding="6" MinWidth="180">
+                    <!-- FlyoutButton centres its content, so a shared name column makes every row the same width and lines them up. -->
+                    <ItemsControl ItemsSource="{Binding Sets}" Grid.IsSharedSizeScope="True">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type w:PinSetOption}">
+                                <Button Style="{StaticResource FlyoutButton}" AutomationProperties.Name="{Binding Name}"
+                                        Command="{Binding DataContext.SelectSetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="26" />
+                                            <ColumnDefinition SharedSizeGroup="PinSetName" />
+                                            <ColumnDefinition Width="26" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Style="{StaticResource Icon}" FontSize="14" HorizontalAlignment="Left" Text="{Binding Icon}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="240" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Style="{StaticResource Icon}" FontSize="12" HorizontalAlignment="Right" Text="&#xE73E;"
+                                                   Visibility="{Binding IsActive, Converter={StaticResource ShowIf}}" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Popup>
+        </Grid>
     </DataTemplate>
 
     <!-- Apps -->

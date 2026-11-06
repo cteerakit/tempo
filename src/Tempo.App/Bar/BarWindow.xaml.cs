@@ -323,6 +323,7 @@ internal partial class BarWindow : Window
         AddBarItem((string)LockBarMenuItem.Header, (string)LockBarMenuItem.Tag, ToggleBarLock_Click);
         if (TaskbarMenuItem.Visibility == Visibility.Visible)
             AddBarItem((string)TaskbarMenuItem.Header, "\uE7F4", ToggleTaskbar_Click);
+        AddBarItem("Task Manager", "\uE9D9", TaskManager_Click);
         menu.Items.Add(new Separator { Tag = Root });
         AddBarItem("Exit Tempo", "\uE7E8", Exit_Click);
 
@@ -514,6 +515,8 @@ internal partial class BarWindow : Window
     }
 
     private void Customize_Click(object sender, RoutedEventArgs e) => _services.OpenSettings();
+
+    private void TaskManager_Click(object sender, RoutedEventArgs e) => ShellActions.OpenTaskManager();
 
     private void ToggleBarLock_Click(object sender, RoutedEventArgs e) =>
         _services.Settings.Update(s => s.Bar.IsLocked = !s.Bar.IsLocked);
