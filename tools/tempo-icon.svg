@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 16 16" role="img" aria-labelledby="title">
+  <title id="title">Tempo Pinned Apps icon</title>
+  <defs>
+    <radialGradient id="aurora" cx="30%" cy="17%" r="85%">
+      <stop stop-color="#2265D4"/>
+      <stop offset="1" stop-color="#090E2C"/>
+    </radialGradient>
+    <linearGradient id="ribbon" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop stop-color="#43DAFF"/>
+      <stop offset=".57" stop-color="#4189FF"/>
+      <stop offset="1" stop-color="#8274FF"/>
+    </linearGradient>
+    <filter id="soft-glow" x="-50%" y="-100%" width="200%" height="300%">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+    <clipPath id="tile-edge"><rect width="16" height="16" rx="3.75"/></clipPath>
+  </defs>
+  <rect width="16" height="16" rx="3.75" fill="url(#aurora)"/>
+  <g clip-path="url(#tile-edge)">
+    <path d="M-2 9C2 9 3 2 7 3s4 7 11 2" fill="none" stroke="url(#ribbon)"
+          stroke-width="3.5" filter="url(#soft-glow)"/>
+  </g>
+  <g fill="#E8F8FF" fill-opacity=".30">
+    <rect x="2" y="8" width="12" height="6" rx="1.5"/>
+  </g>
+  <g fill="#FFFFFF" fill-opacity=".85">
+    <circle cx="5" cy="11" r="1"/>
+    <circle cx="8" cy="11" r="1"/>
+    <circle cx="11" cy="11" r="1"/>
+  </g>
+</svg>

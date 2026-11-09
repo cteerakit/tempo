@@ -1,62 +1,53 @@
-"""Generates src/Tempo.App/Assets/Tempo.ico (32-bit DIB frames, no dependencies)."""
-import struct, sys, pathlib
+"""Generates src/Tempo.App/Assets/Tempo.ico from tools/tempo-icon.svg.
 
-SIZES = [16, 20, 24, 32, 40, 48, 64, 128]
-SS = 4  # supersampling factor per axis
+Each frame is rendered straight from the vector source by headless Chrome or Edge
+(transparent background) and stored as an embedded PNG. No Python packages needed.
+Usage: python tools/make_icon.py src/Tempo.App/Assets/Tempo.ico
+"""
+import os, pathlib, shutil, struct, subprocess, sys, tempfile
 
-def inside_round_rect(x, y, x0, y0, x1, y1, r):
-    if x < x0 or x > x1 or y < y0 or y > y1:
-        return False
-    cx = min(max(x, x0 + r), x1 - r)
-    cy = min(max(y, y0 + r), y1 - r)
-    return (x - cx) ** 2 + (y - cy) ** 2 <= r * r
+SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
+SVG = pathlib.Path(__file__).with_name('tempo-icon.svg')
+BROWSERS = [
+    r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+    r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+    r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+    r'C:\Program Files\Microsoft\Edge\Application\msedge.exe',
+]
 
-def sample(u, v):
-    """u, v in [0,1]. Returns premultiplied-free RGBA floats."""
-    if not inside_round_rect(u, v, 0.02, 0.02, 0.98, 0.98, 0.24):
-        return None
-    # Diagonal gradient: indigo -> violet -> pink.
-    t = (u + v) / 2
-    c0, c1 = (79, 70, 229), (192, 38, 211)
-    col = tuple(c0[i] + (c1[i] - c0[i]) * t for i in range(3))
-    # The "T": a top bar and a stem, slightly rounded.
-    bar = inside_round_rect(u, v, 0.24, 0.24, 0.76, 0.38, 0.06)
-    stem = inside_round_rect(u, v, 0.43, 0.24, 0.57, 0.78, 0.06)
-    # A small accent dot, hinting at a timeline.
-    dot = (u - 0.72) ** 2 + (v - 0.70) ** 2 <= 0.075 ** 2
-    if bar or stem or dot:
-        col = (255, 255, 255)
-    return col
+def find_browser():
+    for p in BROWSERS:
+        if os.path.exists(p):
+            return p
+    for name in ('chrome', 'msedge'):
+        p = shutil.which(name)
+        if p:
+            return p
+    sys.exit('Chrome or Edge is required to rasterize the SVG.')
 
-def render(size):
-    rows = []
-    for py in range(size):
-        row = []
-        for px in range(size):
-            r = g = b = a = 0.0
-            for sy in range(SS):
-                for sx in range(SS):
-                    c = sample((px + (sx + 0.5) / SS) / size, (py + (sy + 0.5) / SS) / size)
-                    if c:
-                        r += c[0]; g += c[1]; b += c[2]; a += 1
-            n = SS * SS
-            if a:
-                row.append((round(b / a), round(g / a), round(r / a), round(255 * a / n)))
-            else:
-                row.append((0, 0, 0, 0))
-        rows.append(row)
-    return rows
-
-def dib(size):
-    rows = render(size)
-    header = struct.pack('<IiiHHIIiiII', 40, size, size * 2, 1, 32, 0, 0, 0, 0, 0, 0)
-    pixels = b''.join(bytes(c for px in row for c in px) for row in reversed(rows))
-    mask_stride = ((size + 31) // 32) * 4
-    mask = bytes(mask_stride * size)
-    return header + pixels + mask
+def render(browser, tmp, size):
+    html = tmp / f'icon{size}.html'
+    png = tmp / f'icon{size}.png'
+    html.write_text(
+        '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:transparent}'
+        f'img{{display:block;width:{size}px;height:{size}px}}</style>'
+        f'<img src="{SVG.resolve().as_uri()}">', encoding='utf-8')
+    subprocess.run([
+        browser, '--headless=new', '--disable-gpu', '--hide-scrollbars',
+        '--default-background-color=00000000', f'--window-size={size},{size}',
+        f'--user-data-dir={tmp / "profile"}', f'--screenshot={png}', html.as_uri(),
+    ], check=True, capture_output=True)
+    data = png.read_bytes()
+    w, h = struct.unpack('>II', data[16:24])
+    if (w, h) != (size, size):
+        sys.exit(f'Expected a {size}px frame but the browser produced {w}x{h}.')
+    return data
 
 def main(out):
-    frames = [dib(s) for s in SIZES]
+    browser = find_browser()
+    with tempfile.TemporaryDirectory() as t:
+        tmp = pathlib.Path(t)
+        frames = [render(browser, tmp, s) for s in SIZES]
     data = struct.pack('<HHH', 0, 1, len(frames))
     offset = 6 + 16 * len(frames)
     for s, f in zip(SIZES, frames):
