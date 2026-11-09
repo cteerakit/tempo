@@ -28,7 +28,7 @@ internal static class BuiltInWidgets
             WidgetTypes.Sound, "Sound", "Volume, plus switching the output and input devices", "System", "\uE767",
             (c, s) => new SoundWidget(c, s)));
         registry.Register(WidgetDescriptor.Create<NetworkSettings>(
-            WidgetTypes.Network, "Network", "Wi-Fi or Ethernet status", "System", "\uE701",
+            WidgetTypes.Network, "Network", "Wi-Fi and Ethernet status, addresses and live speed", "System", "\uE701",
             (c, s) => new NetworkWidget(c, s)));
         registry.Register(WidgetDescriptor.Create<NoSettings>(
             WidgetTypes.Notifications, "Notifications", "Notification center", "System", "\uEA8F",

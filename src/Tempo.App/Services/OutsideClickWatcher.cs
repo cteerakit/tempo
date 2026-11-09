@@ -1,6 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using Tempo.App.Interop;
 
@@ -75,13 +78,19 @@ internal static class OutsideClickWatcher
             return;
         }
 
-        // Clicks on the bar or one of its menus/flyouts are WPF's to handle (e.g. a widget toggling its
-        // own flyout). Those are all tool windows; Tempo's settings window is not, so it counts as outside.
+        // Tempo's own popups (flyouts, menus, drop-downs) and the bar are tool windows; Tempo's settings
+        // window is not, so it counts as outside.
         var root = GetAncestor(WindowFromPoint(point), GA_ROOT);
         NativeMethods.GetWindowThreadProcessId(root, out var pid);
         if (pid == Environment.ProcessId
             && ((long)NativeMethods.GetWindowLongPtr(root, NativeMethods.GWL_EXSTYLE) & NativeMethods.WS_EX_TOOLWINDOW) != 0)
+        {
+            // Clicks inside a popup are its own business. A click elsewhere on the bar closes every
+            // flyout except the one belonging to what was clicked, which toggles itself.
+            if (HwndSource.FromHwnd(root)?.RootVisual is Window window)
+                CloseFlyoutsExcept(OwnersAt(window, point));
             return;
+        }
 
         foreach (var close in Open.Values.ToList())
         {
@@ -97,6 +106,39 @@ internal static class OutsideClickWatcher
         Open.Clear();
         Flyouts.Clear();
         StopHook();
+    }
+
+    /// <summary>The data contexts of the clicked element and its ancestors: any of them may own a flyout.</summary>
+    private static HashSet<object> OwnersAt(Window window, POINT point)
+    {
+        var owners = new HashSet<object>();
+        var hit = window.InputHitTest(window.PointFromScreen(new Point(point.X, point.Y))) as DependencyObject;
+        for (var element = hit; element is not null;
+             element = element is Visual or Visual3D ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element))
+        {
+            if (element is FrameworkElement { DataContext: { } context })
+                owners.Add(context);
+        }
+        return owners;
+    }
+
+    private static void CloseFlyoutsExcept(HashSet<object> keep)
+    {
+        foreach (var flyout in Flyouts.Where(f => !keep.Contains(f)).ToList())
+        {
+            if (Open.TryGetValue(flyout, out var close))
+            {
+                try
+                {
+                    close();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Could not close a flyout", ex);
+                }
+            }
+            Unregister(flyout);
+        }
     }
 
     private static void StartHook()

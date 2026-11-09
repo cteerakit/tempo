@@ -274,7 +274,8 @@ internal partial class BarWindow : Window
                 isAppMenu = element is FrameworkElement { DataContext: AppEntry };
                 break;
             }
-        if (menu is null)
+        // App buttons own their menu entirely; the bar's commands don't belong there.
+        if (menu is null || isAppMenu)
             return;
 
         // Rebuild the host section without disturbing widget-specific commands.
@@ -290,7 +291,7 @@ internal partial class BarWindow : Window
                 break;
             }
 
-        if (!isAppMenu && widget is not null && Settings.Layout.Find(widget.InstanceId) is { } instance &&
+        if (widget is not null && Settings.Layout.Find(widget.InstanceId) is { } instance &&
             _services.Widgets.Find(instance.TypeId) is { } descriptor)
         {
             var id = widget.InstanceId;
