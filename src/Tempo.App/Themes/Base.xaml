@@ -77,11 +77,70 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     </Style>
 
+    <!-- A flyout row whose content fills the row and sits left, rather than being centred like FlyoutButton. -->
+    <Style x:Key="FlyoutListButton" TargetType="ButtonBase" BasedOn="{StaticResource FlyoutButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ButtonBase">
+                    <Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource Widget.HoverBackground}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource Widget.PressedBackground}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="RoundButton" TargetType="ButtonBase" BasedOn="{StaticResource WidgetButton}">
         <Setter Property="Width" Value="36" />
         <Setter Property="Height" Value="36" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="2,0" />
+    </Style>
+
+    <!-- An on/off switch for flyouts (WPF has no ToggleSwitch). -->
+    <Style x:Key="FlyoutSwitch" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Cursor" Value="Arrow" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Grid Width="40" Height="20" Background="Transparent">
+                        <Border x:Name="Track" CornerRadius="10" BorderThickness="1" Background="Transparent"
+                                BorderBrush="{DynamicResource Bar.SubtleForeground}" />
+                        <Ellipse x:Name="Knob" Width="12" Height="12" Margin="4,0" HorizontalAlignment="Left"
+                                 Fill="{DynamicResource Bar.SubtleForeground}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
+                            <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource Accent.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Knob" Property="Width" Value="14" />
+                            <Setter TargetName="Knob" Property="Height" Value="14" />
+                            <Setter TargetName="Knob" Property="Margin" Value="3,0" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Put on a button's icon: like the native taskbar, it shrinks while pressed and springs back on release. -->

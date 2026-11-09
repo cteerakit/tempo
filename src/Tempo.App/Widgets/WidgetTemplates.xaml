@@ -74,23 +74,23 @@
                 </StackPanel>
             </Button>
             <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=SwitchButton}" IsOpen="{Binding IsFlyoutOpen}">
-                <Border Style="{StaticResource FlyoutPanel}" Padding="6" MinWidth="180">
-                    <!-- FlyoutButton centres its content, so a shared name column makes every row the same width and lines them up. -->
-                    <ItemsControl ItemsSource="{Binding Sets}" Grid.IsSharedSizeScope="True">
+                <Border Style="{StaticResource FlyoutPanel}" Padding="6">
+                    <!-- Rows stretch to the widest entry, with the name filling the middle, so no empty gutters sit either side of the text. -->
+                    <ItemsControl ItemsSource="{Binding Sets}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type w:PinSetOption}">
-                                <Button Style="{StaticResource FlyoutButton}" AutomationProperties.Name="{Binding Name}"
+                                <Button Style="{StaticResource FlyoutListButton}" AutomationProperties.Name="{Binding Name}"
                                         Command="{Binding DataContext.SelectSetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="26" />
-                                            <ColumnDefinition SharedSizeGroup="PinSetName" />
-                                            <ColumnDefinition Width="26" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Style="{StaticResource Icon}" FontSize="14" HorizontalAlignment="Left" Text="{Binding Icon}" />
+                                        <TextBlock Style="{StaticResource Icon}" FontSize="14" HorizontalAlignment="Left" Margin="0,0,10,0" Text="{Binding Icon}" />
                                         <TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="240" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="2" Style="{StaticResource Icon}" FontSize="12" HorizontalAlignment="Right" Text="&#xE73E;"
+                                        <TextBlock Grid.Column="2" Style="{StaticResource Icon}" FontSize="12" HorizontalAlignment="Right" Margin="14,0,0,0" Text="&#xE73E;"
                                                    Visibility="{Binding IsActive, Converter={StaticResource ShowIf}}" />
                                     </Grid>
                                 </Button>
@@ -562,7 +562,7 @@
         </Grid>
     </DataTemplate>
 
-    <!-- Network -->
+    <!-- Network: physical Wi-Fi and Ethernet adapters -->
     <DataTemplate DataType="{x:Type w:NetworkWidget}">
         <Grid>
             <ToggleButton x:Name="Toggle" Style="{StaticResource WidgetButton}" IsChecked="{Binding IsFlyoutOpen}" ToolTip="{Binding Status}">
@@ -570,33 +570,131 @@
                     <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" />
                     <TextBlock Text="{Binding Name}" Margin="7,0,0,0" MaxWidth="140" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                Visibility="{Binding Settings.ShowName, Converter={StaticResource ShowIf}}" />
+                    <!-- Fixed widths and tabular digits keep the bar from jittering as the rates change. -->
+                    <StackPanel Orientation="Horizontal" Margin="8,0,0,0" Typography.NumeralAlignment="Tabular"
+                                Visibility="{Binding Settings.ShowSpeed, Converter={StaticResource ShowIf}}">
+                        <TextBlock Text="↓" Foreground="{DynamicResource Bar.SubtleForeground}" VerticalAlignment="Center" Margin="0,0,3,0" />
+                        <TextBlock Text="{Binding DownRate}" MinWidth="60" VerticalAlignment="Center" />
+                        <TextBlock Text="↑" Foreground="{DynamicResource Bar.SubtleForeground}" VerticalAlignment="Center" Margin="4,0,3,0" />
+                        <TextBlock Text="{Binding UpRate}" MinWidth="60" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </ToggleButton>
             <Popup Style="{StaticResource WidgetFlyout}" PlacementTarget="{Binding ElementName=Toggle}" IsOpen="{Binding IsFlyoutOpen}">
-                <Border Style="{StaticResource FlyoutPanel}" Width="330">
+                <Border Style="{StaticResource FlyoutPanel}" Width="340">
                     <StackPanel>
-                        <TextBlock Text="Network" Style="{StaticResource Heading}" />
-                        <DockPanel Margin="0,14,0,16">
-                            <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" FontSize="24" Margin="0,0,12,0" />
-                            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        <!-- The connection carrying traffic -->
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="{Binding Glyph}" FontSize="26" Margin="0,0,14,0" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Headline}" Style="{StaticResource Heading}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Subline}" Style="{StaticResource Subtle}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0" />
+                            </StackPanel>
                         </DockPanel>
-                        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding Connections}">
+
+                        <!-- Live throughput across all adapters -->
+                        <Grid Margin="0,14,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Name, Converter={StaticResource ShowIf}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Border CornerRadius="8" Padding="12,8" Background="{DynamicResource Widget.HoverBackground}">
+                                <StackPanel>
+                                    <TextBlock Text="↓  Download" Style="{StaticResource Subtle}" />
+                                    <TextBlock Text="{Binding DownRate}" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" CornerRadius="8" Padding="12,8" Background="{DynamicResource Widget.HoverBackground}">
+                                <StackPanel>
+                                    <TextBlock Text="↑  Upload" Style="{StaticResource Subtle}" />
+                                    <TextBlock Text="{Binding UpRate}" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- One card per Wi-Fi / Ethernet adapter -->
+                        <ScrollViewer MaxHeight="380" Margin="0,14,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Adapters}">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{DynamicResource Widget.HoverBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                    <DataTemplate DataType="{x:Type w:NetworkAdapterItem}">
+                                        <Border Background="{DynamicResource Widget.HoverBackground}" CornerRadius="8" Padding="12,10" Margin="0,0,0,8">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Kind}" Style="{StaticResource Subtle}" Margin="0,3,0,0" />
-                                                <TextBlock Text="{Binding Address}" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                <DockPanel>
+                                                    <TextBlock x:Name="CardGlyph" DockPanel.Dock="Left" Style="{StaticResource Icon}" FontSize="18" Width="18"
+                                                               Text="{Binding Glyph}" Margin="0,0,12,0" />
+                                                    <ToggleButton x:Name="WifiSwitch" DockPanel.Dock="Right" Style="{StaticResource FlyoutSwitch}" Margin="10,0,0,0"
+                                                                  Visibility="Collapsed" ToolTip="Wi-Fi" AutomationProperties.Name="Wi-Fi"
+                                                                  IsChecked="{Binding DataContext.IsWifiOn, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=TwoWay}" />
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}" />
+                                                        <TextBlock Text="{Binding StatusLine}" Style="{StaticResource Subtle}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Details}" Margin="30,8,0,0" Visibility="{Binding IsConnected, Converter={StaticResource ShowIf}}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type w:NetworkDetail}">
+                                                            <DockPanel MinHeight="22">
+                                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" Style="{StaticResource Subtle}" FontSize="12" Width="72" VerticalAlignment="Center" />
+                                                                <Button DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Width="22" Height="22" MinWidth="0" Padding="0" Margin="4,0,0,0"
+                                                                        VerticalAlignment="Center" ToolTip="Copy" AutomationProperties.Name="{Binding Label, StringFormat=Copy {0}}"
+                                                                        Command="{x:Static w:NetworkWidget.CopyCommand}" CommandParameter="{Binding Value}"
+                                                                        Visibility="{Binding CanCopy, Converter={StaticResource ShowIf}}">
+                                                                    <TextBlock Style="{StaticResource Icon}" FontSize="11" Text="&#xE8C8;" />
+                                                                </Button>
+                                                                <TextBlock Text="{Binding Value}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                            </DockPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding Activity}" Style="{StaticResource Subtle}" FontSize="12" Margin="30,6,0,0" Typography.NumeralAlignment="Tabular"
+                                                           Visibility="{Binding Activity, Converter={StaticResource ShowIf}}" />
                                             </StackPanel>
                                         </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="False">
+                                                <Setter TargetName="CardGlyph" Property="Opacity" Value="0.45" />
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsWifi}" Value="True" />
+                                                    <Condition Binding="{Binding DataContext.HasWifiRadio, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter TargetName="WifiSwitch" Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
-                        <Button Style="{StaticResource FlyoutButton}" Content="Manage Wi-Fi connections" Command="{Binding ManageWifiCommand}" Margin="0,8,0,0" />
-                        <Button Style="{StaticResource FlyoutButton}" Content="Network settings" Command="{Binding OpenNetworkSettingsCommand}" />
+
+                        <Button Style="{StaticResource FlyoutButton}" Command="{Binding ShowAvailableNetworksCommand}" Margin="0,4,0,0"
+                                Visibility="{Binding HasWifi, Converter={StaticResource ShowIf}}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE701;" Margin="0,0,10,0" />
+                                <TextBlock Text="Available Wi-Fi networks" />
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlyoutButton}" Command="{Binding OpenWifiSettingsCommand}"
+                                Visibility="{Binding HasWifi, Converter={StaticResource ShowIf}}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE713;" Margin="0,0,10,0" />
+                                <TextBlock Text="Wi-Fi settings" />
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlyoutButton}" Command="{Binding OpenEthernetSettingsCommand}"
+                                Visibility="{Binding HasEthernet, Converter={StaticResource ShowIf}}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE839;" Margin="0,0,10,0" />
+                                <TextBlock Text="Ethernet settings" />
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource FlyoutButton}" Command="{Binding OpenNetworkSettingsCommand}">
+                            <DockPanel>
+                                <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE968;" Margin="0,0,10,0" />
+                                <TextBlock Text="Advanced network settings" />
+                            </DockPanel>
+                        </Button>
                     </StackPanel>
                 </Border>
             </Popup>
