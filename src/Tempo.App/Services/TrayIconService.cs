@@ -21,7 +21,39 @@ internal sealed class TrayIconService : IDisposable
             if (_area is null) return;
             foreach (var icon in _area.TrayIcons.Where(icon => !IsWindow(icon.HWnd)).ToArray())
                 _area.TrayIcons.Remove(icon);
+            // Explorer restarts recreate its task band.
+            if (!IsWindow(GetProp(_area.Handle, TaskbandProperty)))
+                LinkTaskband(_area.Handle);
         };
+    }
+
+    private const string TaskbandProperty = "TaskbandHWND";
+
+    /// <summary>
+    /// The listener's window takes the Shell_TrayWnd class so notification icons reach it, which also
+    /// makes it the window ITaskbarList finds. ITaskbarList::HrInit reads the task band from this
+    /// property and fails without it (taskbar progress is lost, and NanaZip crashes after extracting).
+    /// Point it at Explorer's task band so those calls still reach Explorer.
+    /// </summary>
+    private static void LinkTaskband(nint listener)
+    {
+        var explorerTray = Shell.TaskbarHider.GetTrayWindows()
+            .FirstOrDefault(hwnd => GetWindowClass(hwnd) == "Shell_TrayWnd");
+        if (explorerTray == 0) return;
+
+        var taskband = GetProp(explorerTray, TaskbandProperty);
+        if (!IsWindow(taskband))
+        {
+            taskband = 0;
+            EnumChildWindows(explorerTray, (child, _) =>
+            {
+                if (GetWindowClass(child) != "MSTaskSwWClass") return true;
+                taskband = child;
+                return false;
+            }, 0);
+        }
+        if (taskband != 0 && !SetProp(listener, TaskbandProperty, taskband))
+            Log.Error($"Could not link the taskbar progress window (error {Marshal.GetLastWin32Error()}).");
     }
 
     public NotificationArea GetArea()
@@ -51,6 +83,7 @@ internal sealed class TrayIconService : IDisposable
             Dispose();
             throw new InvalidOperationException("The notification icon listener could not be attached.");
         }
+        LinkTaskband(_area.Handle);
         _cleanup.Start();
         _users = 1;
         return _area;
