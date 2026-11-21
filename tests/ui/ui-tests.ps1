@@ -119,13 +119,13 @@ try {
         Wait-Settings { param($s) $s.appearance.themeId -eq 'Midnight' -and -not $s.appearance.accentColor -and -not $s.appearance.backdrop }
     }
 
-    # --- Behavior ---
-    Test-UI 'Behavior tab' { Ui invoke TabBehavior; Ui wait-for CmbMode -t 3000 }
+    # --- Bar shape and position (Appearance) ---
+    Test-UI 'Shape and position controls' { Ui invoke TabAppearance; Ui wait-for CmbMode -t 3000 }
     Test-UI 'Switch to floating pill' {
         Select-Combo CmbMode 'Floating pill'
         Wait-Settings { param($s) $s.bar.mode -eq 'Pill' }
     }
-    Test-UI 'Pill options enabled' { Ui wait-for ChkReserve -p IsEnabled --value True -t 2000 }
+    Test-UI 'Pill gap enabled' { Ui wait-for SldMargin -p IsEnabled --value True -t 2000 }
     Start-Sleep -Milliseconds 800
     $barHwnd = ($windows | Where-Object { $_.title -eq 'Tempo' } | Select-Object -First 1).hwnd
     winapp ui screenshot -w $barHwnd -o "$OutDir\03-bar-pill.png" -q 2>$null | Out-Null
@@ -134,11 +134,19 @@ try {
         Wait-Settings { param($s) $s.bar.edge -eq 'Top' }
     }
     Start-Sleep -Milliseconds 800
-    winapp ui screenshot -w $hwnd -o "$OutDir\04-behavior.png" -q 2>$null | Out-Null
+    winapp ui screenshot -w $hwnd -o "$OutDir\04-shape-and-position.png" -q 2>$null | Out-Null
+
+    # --- Behavior ---
+    Test-UI 'Behavior tab' { Ui invoke TabBehavior; Ui wait-for ChkReserve -t 3000 }
+    Test-UI 'Pill options enabled' { Ui wait-for ChkReserve -p IsEnabled --value True -t 2000 }
     Test-UI 'Back to bottom, full width' {
+        Ui invoke TabAppearance | Out-Null
+        Ui wait-for CmbEdge -t 3000 | Out-Null
         Select-Combo CmbEdge 'Bottom'
         Select-Combo CmbMode 'Full width'
         Wait-Settings { param($s) $s.bar.edge -eq 'Bottom' -and $s.bar.mode -eq 'Full' }
+        Ui invoke TabBehavior | Out-Null
+        Ui wait-for ChkFullscreen -t 3000 | Out-Null
     }
     Test-UI 'Toggle full-screen hiding' {
         Ui invoke ChkFullscreen | Out-Null

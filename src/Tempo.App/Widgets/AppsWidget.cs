@@ -283,8 +283,21 @@ internal sealed partial class AppsWidget(WidgetContext context, AppsSettings set
         System.Windows.Application.Current?.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
         {
             _refreshQueued = false;
+            PruneDeletedSets();
             Refresh();
         });
+    }
+
+    /// <summary>Drops pins kept for sets that no longer exist, so a deleted set's apps don't linger in settings.</summary>
+    private void PruneDeletedSets()
+    {
+        var sets = Services.Settings.Current.PinSets.Sets;
+        var stale = Settings.PinSets.Keys.Where(id => !sets.Any(s => s.Id == id)).ToList();
+        if (stale.Count == 0)
+            return;
+        foreach (var id in stale)
+            Settings.PinSets.Remove(id);
+        Context.SaveSettings(Settings);
     }
 
     // ───────────── Drag to reorder ─────────────

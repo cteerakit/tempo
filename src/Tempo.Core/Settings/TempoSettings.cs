@@ -52,7 +52,9 @@ public sealed class PinSetDefinition
 
 public sealed class PinSetCatalog
 {
-    public string ActiveId { get; set; } = "default";
+    public const string DefaultId = "default";
+
+    public string ActiveId { get; set; } = DefaultId;
     public List<PinSetDefinition> Sets { get; set; } = [new()];
 
     public void Normalize()

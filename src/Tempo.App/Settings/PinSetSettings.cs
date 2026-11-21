@@ -90,4 +90,30 @@ internal sealed partial class SettingsViewModel
         Status = "Set renamed.";
     }
 
+    /// <summary>Asks before a destructive change; replaceable so automated checks don't block on a dialog.</summary>
+    internal Func<string, bool> Confirm { get; set; } = message =>
+        System.Windows.MessageBox.Show(
+            System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive)!,
+            message, "Delete pinned app set", System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning, System.Windows.MessageBoxResult.No) == System.Windows.MessageBoxResult.Yes;
+
+    // The default set is the fallback for every other one, so it always exists.
+    private bool CanDelete() => SelectedSet is { Id: not PinSetCatalog.DefaultId };
+
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private void Delete()
+    {
+        if (SelectedSet is not { } selected || !CanDelete()) return;
+        if (!Confirm($"Delete the set \"{selected.Name}\"? Its pinned apps and order will be removed.")) return;
+        Update(s =>
+        {
+            var index = s.PinSets.Sets.FindIndex(x => x.Id == selected.Id);
+            if (index < 0) return;
+            s.PinSets.Sets.RemoveAt(index);
+            s.PinSets.ActiveId = s.PinSets.Sets[Math.Max(0, index - 1)].Id;
+        });
+        SetName = "";
+        Status = $"Set \"{selected.Name}\" deleted.";
+    }
+
 }

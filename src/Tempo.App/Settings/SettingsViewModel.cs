@@ -259,6 +259,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SelectedSet));
         OnPropertyChanged(nameof(SetIcon));
         OnPropertyChanged(nameof(SetIconOnly));
+        DeleteCommand.NotifyCanExecuteChanged();
         // Refresh every simple property; unchanged values are no-ops for the bound controls.
         foreach (var name in RefreshedProperties)
             OnPropertyChanged(name);

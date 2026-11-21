@@ -127,7 +127,21 @@ internal static partial class Program
             Pump();
             Require(current.PinSets.ActiveId == initialId && !selector.IsOpen, "Choosing a set must switch to it and close the selector.");
             Require(List("Pins").SequenceEqual(["default.exe"]), "Selector did not switch the pins.");
-            Console.WriteLine("PASS: settings page editing, click to cycle, wraparound, single-set behavior, three-set selector, create, rename, duplicate validation, isolated pins/order, persistence.");
+            var delete = (ICommand)type.GetProperty("DeleteCommand")!.GetValue(management)!;
+            Require(!delete.CanExecute(null), "The Default set must not be deletable.");
+            var confirm = type.GetProperty("Confirm", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            type.GetProperty("SelectedSet")!.SetValue(management, current.PinSets.Sets.Last());
+            Pump();
+            Require(current.PinSets.ActiveId == homeId && delete.CanExecute(null), "A custom set must be deletable.");
+            confirm.SetValue(management, (Func<string, bool>)(_ => false));
+            Command("Delete");
+            Require(current.PinSets.Sets.Count == 3 && current.PinSets.ActiveId == homeId, "Declining the confirmation still deleted the set.");
+            confirm.SetValue(management, (Func<string, bool>)(_ => true));
+            Command("Delete");
+            Pump();
+            Require(current.PinSets.Sets.Count == 2 && current.PinSets.Sets.All(s => s.Id != homeId), "Delete did not remove the set.");
+            Require(current.PinSets.ActiveId == workId && List("Pins").SequenceEqual(["work.exe"]), "Deleting must select the previous set and keep its pins.");
+            Console.WriteLine("PASS: settings page editing, click to cycle, wraparound, single-set behavior, three-set selector, create, rename, delete, duplicate validation, isolated pins/order, persistence.");
             return 0;
         }
         finally

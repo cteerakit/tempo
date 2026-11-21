@@ -501,7 +501,7 @@ internal static partial class Program
         window.Show();
         var tabs = Find<TabControl>(window);
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(item =>
-            AutomationProperties.GetAutomationId(item) == (behavior ? "TabBehavior" : "TabAppearance"));
+            AutomationProperties.GetAutomationId(item) == "TabAppearance");
         window.UpdateLayout();
         app.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
         var slider = Find<Slider>(window, behavior ? "SldMargin" : blurStrengthCheck ? "SldBlurStrength" : "SldOpacity");
